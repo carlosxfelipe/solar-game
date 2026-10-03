@@ -80,6 +80,22 @@ public class SceneBuilder
         _pickups.Add(new PickupItem(product, bounds, start, _pickupVerts.Count - start));
     }
 
+    /// <summary>
+    /// Item pegável que também aceita devolução: o <paramref name="builder"/> gera a geometria
+    /// de qualquer produto neste lugar, e <paramref name="slotBounds"/> é a área usada para mirar
+    /// quando o lugar está vazio.
+    /// </summary>
+    public void Pickup(Product product, Func<Product, PickupPart[]> builder, BoundingBox slotBounds)
+    {
+        var parts = builder(product);
+        int start = _pickupVerts.Count;
+        foreach (var p in parts)
+            AddBoxGeometry(_pickupVerts, p.Min, p.Max, p.Color, p.Faces, shaded: true);
+        _pickups.Add(
+            new PickupItem(product, PickupSet.Merge(parts), start, _pickupVerts.Count - start, builder, slotBounds)
+        );
+    }
+
     /// <summary>Quad horizontal (chão/teto) sem colisão.</summary>
     public void FloorQuad(float x0, float z0, float x1, float z1, float y, Color color)
     {

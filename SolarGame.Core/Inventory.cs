@@ -64,6 +64,18 @@ public class Inventory
         return -1;
     }
 
+    /// <summary>Tira uma unidade do slot selecionado. Retorna false se ele estiver vazio.</summary>
+    public bool RemoveOneFromSelected()
+    {
+        var s = _slots[Selected];
+        if (s == null)
+            return false;
+        s.Count--;
+        if (s.Count <= 0)
+            _slots[Selected] = null;
+        return true;
+    }
+
     public void Select(int index) => Selected = ((index % SlotCount) + SlotCount) % SlotCount;
 
     public void Scroll(int delta) => Select(Selected + delta);

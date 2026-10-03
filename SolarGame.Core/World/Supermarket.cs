@@ -214,26 +214,38 @@ public static class Supermarket
         const float w = 0.09f;
         const float d = 0.09f;
         const float gap = 0.012f;
-        float h = p.IsBottle ? 0.3f : 0.13f;
+        const float slotHeight = 0.34f; // cabe uma garrafa com tampa
 
-        // Fileira de itens individuais (o da frente primeiro); cada um pode ser pego
+        // Fileira de itens individuais (o da frente primeiro); cada um pode ser pego e devolvido
         for (float zf = zFront; zf - d >= zBack - 0.001f; zf -= d + gap)
         {
-            var body = new PickupPart(new Vector3(x, y, zf - d), new Vector3(x + w, y + h, zf), p.Body);
-            // Rótulo/faixa
-            var label = new PickupPart(
-                new Vector3(x, y + h * 0.45f, zf),
-                new Vector3(x + w, y + h * 0.7f, zf + 0.002f),
-                p.Accent,
-                SceneBuilder.Faces.Front
-            );
-            // Tampa (garrafa) ou topo metálico (lata)
-            var top = p.IsBottle
-                ? new PickupPart(new Vector3(x + 0.03f, y + h, zf - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zf - 0.03f), p.Accent)
-                : new PickupPart(new Vector3(x + 0.005f, y + h, zf - d + 0.005f), new Vector3(x + w - 0.005f, y + h + 0.008f, zf - 0.005f), Metal);
-
-            b.Pickup(p, body, label, top);
+            float z = zf;
+            var slot = new BoundingBox(new Vector3(x, y, z - d), new Vector3(x + w, y + slotHeight, z + 0.002f));
+            b.Pickup(p, prod => BeverageParts(prod, x, y, z), slot);
         }
+    }
+
+    /// <summary>Geometria de uma bebida com a frente em <paramref name="zf"/>.</summary>
+    private static PickupPart[] BeverageParts(Product p, float x, float y, float zf)
+    {
+        const float w = 0.09f;
+        const float d = 0.09f;
+        float h = p.IsBottle ? 0.3f : 0.13f;
+
+        var body = new PickupPart(new Vector3(x, y, zf - d), new Vector3(x + w, y + h, zf), p.Body);
+        // Rótulo/faixa
+        var label = new PickupPart(
+            new Vector3(x, y + h * 0.45f, zf),
+            new Vector3(x + w, y + h * 0.7f, zf + 0.002f),
+            p.Accent,
+            SceneBuilder.Faces.Front
+        );
+        // Tampa (garrafa) ou topo metálico (lata)
+        var top = p.IsBottle
+            ? new PickupPart(new Vector3(x + 0.03f, y + h, zf - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zf - 0.03f), p.Accent)
+            : new PickupPart(new Vector3(x + 0.005f, y + h, zf - d + 0.005f), new Vector3(x + w - 0.005f, y + h + 0.008f, zf - 0.005f), Metal);
+
+        return new[] { body, label, top };
     }
 
     // ---------------------------------------------------------------

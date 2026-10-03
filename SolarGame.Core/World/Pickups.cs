@@ -16,20 +16,41 @@ public readonly record struct PickupPart(
 /// <summary>Item que pode ser pego pelo jogador (ex.: uma garrafa na geladeira).</summary>
 public class PickupItem
 {
-    public Product Product { get; }
-    public BoundingBox Bounds { get; }
+    public Product Product { get; internal set; }
+    public BoundingBox Bounds { get; internal set; }
     public bool Taken { get; internal set; }
+
+    /// <summary>Espaço ocupado pelo "lugar" do item (usado para mirar quando está vazio).</summary>
+    public BoundingBox SlotBounds { get; }
+
+    /// <summary>Gera a geometria de um produto neste lugar (null = não aceita devolução).</summary>
+    internal Func<Product, PickupPart[]> Builder { get; }
+
+    public bool CanPlace => Builder != null;
 
     internal int VertexStart { get; }
     internal int VertexCount { get; }
 
-    internal PickupItem(Product product, BoundingBox bounds, int vertexStart, int vertexCount)
+    internal PickupItem(
+        Product product,
+        BoundingBox bounds,
+        int vertexStart,
+        int vertexCount,
+        Func<Product, PickupPart[]> builder = null,
+        BoundingBox? slotBounds = null
+    )
     {
         Product = product;
         Bounds = bounds;
         VertexStart = vertexStart;
         VertexCount = vertexCount;
+        Builder = builder;
+        SlotBounds = slotBounds ?? bounds;
     }
+
+    /// <summary>Caixa que o produto ocuparia neste lugar.</summary>
+    public BoundingBox BoundsFor(Product product) =>
+        Builder == null ? Bounds : PickupSet.Merge(Builder(product));
 }
 
 /// <summary>
@@ -63,7 +84,9 @@ public class PickupSet
     }
 
     /// <summary>Retorna o item mais próximo atingido pelo raio (ou null).</summary>
-    public PickupItem Raycast(Ray ray, float maxDistance)
+    public PickupItem Raycast(Ray ray, float maxDistance) => Raycast(ray, maxDistance, out _);
+
+    public PickupItem Raycast(Ray ray, float maxDistance, out float distance)
     {
         PickupItem best = null;
         float bestDistance = maxDistance;
@@ -78,7 +101,65 @@ public class PickupSet
                 best = item;
             }
         }
+        distance = bestDistance;
         return best;
+    }
+
+    /// <summary>Retorna o lugar vazio mais próximo atingido pelo raio (ou null).</summary>
+    public PickupItem RaycastEmpty(Ray ray, float maxDistance, out float distance)
+    {
+        PickupItem best = null;
+        float bestDistance = maxDistance;
+        foreach (var item in _items)
+        {
+            if (!item.Taken || !item.CanPlace)
+                continue;
+            float? d = item.SlotBounds.Intersects(ray);
+            if (d.HasValue && d.Value < bestDistance)
+            {
+                bestDistance = d.Value;
+                best = item;
+            }
+        }
+        distance = bestDistance;
+        return best;
+    }
+
+    /// <summary>Coloca um produto de volta em um lugar vazio. Retorna false se não couber.</summary>
+    public bool Place(PickupItem item, Product product)
+    {
+        if (item == null || !item.Taken || !item.CanPlace)
+            return false;
+
+        var parts = item.Builder(product);
+        var verts = new List<VertexPositionColor>(item.VertexCount);
+        foreach (var p in parts)
+            SceneBuilder.AddBoxGeometry(verts, p.Min, p.Max, p.Color, p.Faces, shaded: true);
+        if (verts.Count > item.VertexCount)
+            return false;
+
+        // Completa o trecho com vértices degenerados, caso a nova geometria seja menor
+        while (verts.Count < item.VertexCount)
+            verts.Add(default);
+
+        if (_buffer != null)
+        {
+            int stride = VertexPositionColor.VertexDeclaration.VertexStride;
+            _buffer.SetData(item.VertexStart * stride, verts.ToArray(), 0, item.VertexCount, stride);
+        }
+
+        item.Product = product;
+        item.Bounds = Merge(parts);
+        item.Taken = false;
+        return true;
+    }
+
+    internal static BoundingBox Merge(PickupPart[] parts)
+    {
+        var bounds = new BoundingBox(parts[0].Min, parts[0].Max);
+        foreach (var p in parts)
+            bounds = BoundingBox.CreateMerged(bounds, new BoundingBox(p.Min, p.Max));
+        return bounds;
     }
 
     /// <summary>Remove o item do mundo.</summary>

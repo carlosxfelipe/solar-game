@@ -34,6 +34,8 @@ public class Game1 : Game
 
     // Item sob a mira (dentro do alcance)
     private PickupItem _target;
+    // Lugar vazio sob a mira, onde o item selecionado pode ser devolvido
+    private PickupItem _placeTarget;
     private const float ReachDistance = 3f;
 
     // Mensagens rápidas no HUD
@@ -129,7 +131,7 @@ public class Game1 : Game
             var vPad = _virtualGamepad.PadState;
             if (vPad.ThumbSticks.Left != Vector2.Zero || vPad.Buttons.A == ButtonState.Pressed
                 || vPad.Buttons.LeftStick == ButtonState.Pressed || vPad.Buttons.Start == ButtonState.Pressed
-                || vPad.Buttons.X == ButtonState.Pressed)
+                || vPad.Buttons.X == ButtonState.Pressed || vPad.Buttons.Y == ButtonState.Pressed)
                 pad = vPad;
 
             lookX = _virtualGamepad.LookDelta.X * 2;
@@ -179,7 +181,7 @@ public class Game1 : Game
             UpdateHotbarSelection(keyboard, mouse, pad);
 
             // Item sob a mira
-            _target = _scene.Pickups.Raycast(new Ray(_player.EyePosition, _player.Forward), ReachDistance);
+            UpdateTargets();
 
             bool grab =
                 !justUnpaused
@@ -189,8 +191,18 @@ public class Game1 : Game
                     || (pad.Triggers.Right > 0.5f && _prevPad.Triggers.Right <= 0.5f)
                 );
 
+            bool place =
+                !justUnpaused
+                && (
+                    (!IsMobile && mouse.RightButton == ButtonState.Pressed && _prevMouse.RightButton == ButtonState.Released)
+                    || (pad.Buttons.Y == ButtonState.Pressed && _prevPad.Buttons.Y == ButtonState.Released)
+                    || (pad.Triggers.Left > 0.5f && _prevPad.Triggers.Left <= 0.5f)
+                );
+
             if (grab)
                 TryGrab();
+            else if (place)
+                TryPlace();
         }
 
         // Nome do item selecionado aparece por alguns segundos quando muda
@@ -228,7 +240,39 @@ public class Game1 : Game
 
         _scene.Pickups.Take(_target);
         _inventory.Select(slot);
-        _target = _scene.Pickups.Raycast(new Ray(_player.EyePosition, _player.Forward), ReachDistance);
+        UpdateTargets();
+    }
+
+    private void TryPlace()
+    {
+        var held = _inventory.SelectedStack;
+        if (held == null || _placeTarget == null)
+            return;
+
+        if (!_scene.Pickups.Place(_placeTarget, held.Product))
+            return;
+
+        _hand.Swing();
+        _inventory.RemoveOneFromSelected();
+        UpdateTargets();
+    }
+
+    /// <summary>
+    /// Atualiza o item sob a mira (para pegar) e o lugar vazio (para devolver).
+    /// O lugar vazio só vale se estiver na frente de qualquer item cheio.
+    /// </summary>
+    private void UpdateTargets()
+    {
+        var ray = new Ray(_player.EyePosition, _player.Forward);
+        _target = _scene.Pickups.Raycast(ray, ReachDistance, out float grabDistance);
+
+        _placeTarget = null;
+        if (_inventory.SelectedStack != null)
+        {
+            var empty = _scene.Pickups.RaycastEmpty(ray, ReachDistance, out float emptyDistance);
+            if (empty != null && (_target == null || emptyDistance <= grabDistance))
+                _placeTarget = empty;
+        }
     }
 
     private void UpdateHotbarSelection(KeyboardState keyboard, MouseState mouse, GamePadState pad)
@@ -289,6 +333,11 @@ public class Game1 : Game
         if (_target != null && !_paused)
             PickupSet.DrawOutline(GraphicsDevice, _effect, _target.Bounds, new Color(20, 20, 20));
 
+        // Prévia de onde o item selecionado será devolvido
+        var heldStack = _inventory.SelectedStack;
+        if (_placeTarget != null && heldStack != null && !_paused)
+            PickupSet.DrawOutline(GraphicsDevice, _effect, _placeTarget.BoundsFor(heldStack.Product), Color.White);
+
         _hand.Draw(GraphicsDevice, _effect);
 
         DrawHud();
@@ -321,7 +370,7 @@ public class Game1 : Game
             if (!IsMobile)
             {
                 DrawCentered("WASD: MOVE   MOUSE: LOOK   SHIFT: RUN   SPACE: JUMP", cy + titleScale * 6, Math.Max(1, textScale / 2 + 1), Color.LightGray);
-                DrawCentered("CLICK: GRAB   1-9 / WHEEL: SELECT ITEM", cy + titleScale * 8, Math.Max(1, textScale / 2 + 1), Color.LightGray);
+                DrawCentered("LEFT CLICK: GRAB   RIGHT CLICK: PUT BACK   1-9 / WHEEL: SELECT ITEM", cy + titleScale * 8, Math.Max(1, textScale / 2 + 1), Color.LightGray);
                 DrawCentered("ESC: PAUSE / QUIT", cy + titleScale * 10, Math.Max(1, textScale / 2 + 1), Color.Gray);
             }
         }
