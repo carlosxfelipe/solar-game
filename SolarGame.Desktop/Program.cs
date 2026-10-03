@@ -1,2 +1,2 @@
-﻿using var game = new SolarGame.Desktop.Game1();
+﻿using var game = new SolarGame.Game1();
 game.Run();

@@ -26,4 +26,8 @@
     <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
   </ItemGroup>
+  <!-- Codigo do jogo compartilhado entre todas as plataformas -->
+  <ItemGroup>
+    <Compile Include="..\SolarGame.Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>
