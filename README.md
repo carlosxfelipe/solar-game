@@ -1,6 +1,6 @@
-# SolarGame
+# Supermarket Simulator
 
-Bem-vindo ao repositório do **SolarGame**! Este é um jogo multiplataforma desenvolvido em C# com o framework MonoGame.
+Bem-vindo ao repositório do **Supermarket Simulator**! Este é um jogo multiplataforma desenvolvido em C# com o framework MonoGame.
 
 ## 📋 Pré-requisitos
 
@@ -36,10 +36,10 @@ Se você já fez o passo acima, ou se a sua máquina já possui os workloads, ba
 
 ```bash
 # Clone o repositório
-git clone https://github.com/carlosxfelipe/solar-game.git
+git clone https://github.com/carlosxfelipe/supermarket-simulator.git
 
 # Acesse a pasta do projeto
-cd solar-game
+cd supermarket-simulator
 
 # Restaure as dependências do NuGet (baixar pacotes)
 dotnet restore
@@ -49,7 +49,7 @@ dotnet restore
 
 ## 🎮 Como Rodar o Jogo
 
-O SolarGame possui alvos diferentes para cada plataforma. Escolha abaixo a plataforma que deseja testar:
+O Supermarket Simulator possui alvos diferentes para cada plataforma. Escolha abaixo a plataforma que deseja testar:
 
 ### Computador (Desktop)
 A forma mais fácil e rápida de testar o jogo durante o desenvolvimento:

@@ -71,7 +71,7 @@ public class Game1 : Game
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
         Window.AllowUserResizing = true;
-        Window.Title = "Solar Game";
+        Window.Title = "Supermarket Simulator";
 #endif
     }
 
@@ -311,7 +311,7 @@ public class Game1 : Game
 
             int titleScale = Math.Max(2, h / 80);
             int textScale = Math.Max(1, titleScale / 2);
-            DrawCentered("SOLAR GAME", cy - titleScale * 12, titleScale, new Color(230, 40, 60));
+            DrawCentered("SUPERMARKET SIMULATOR", cy - titleScale * 12, titleScale, new Color(230, 40, 60));
             DrawCentered(
                 IsMobile ? "TAP MENU TO CONTINUE" : "CLICK TO PLAY",
                 cy + titleScale * 2,
