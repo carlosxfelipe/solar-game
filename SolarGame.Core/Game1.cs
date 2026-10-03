@@ -45,6 +45,7 @@ public class Game1 : Game
 
         _graphics.SynchronizeWithVerticalRetrace = true;
         _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+        _graphics.PreferredDepthStencilFormat = DepthFormat.Depth24;
         IsFixedTimeStep = false;
 
 #if ANDROID || IOS
@@ -176,7 +177,7 @@ public class Game1 : Game
         _effect.Projection = Matrix.CreatePerspectiveFieldOfView(
             MathHelper.ToRadians(70f),
             GraphicsDevice.Viewport.AspectRatio,
-            0.05f,
+            0.1f,
             200f
         );
         _effect.World = Matrix.Identity;

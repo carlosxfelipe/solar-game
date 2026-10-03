@@ -125,7 +125,7 @@ public static class Supermarket
         {
             float x0 = MathF.Max(-t, px - 0.25f);
             float x1 = MathF.Min(Width + t, px + 0.25f);
-            b.Box(new Vector3(x0, 0, Depth), new Vector3(x1, 3f, Depth + t), DarkMetal);
+            b.Box(new Vector3(x0 - 0.01f, 0, Depth - 0.01f), new Vector3(x1 + 0.01f, 3f, Depth + t + 0.01f), DarkMetal);
         }
 
         // Vidros fixos e portas automáticas
@@ -169,7 +169,7 @@ public static class Supermarket
             b.Decor(new Vector3(x0, 0, 0), new Vector3(x1, top, z0 + 0.05f), new Color(35, 35, 40)); // fundo
             b.Decor(new Vector3(x0, 0, 0), new Vector3(x0 + 0.05f, top, z1), DarkMetal); // lateral esq.
             b.Decor(new Vector3(x1 - 0.05f, 0, 0), new Vector3(x1, top, z1), DarkMetal); // lateral dir.
-            b.Decor(new Vector3(x0, 0, 0), new Vector3(x1, shelfY[0], z1), DarkMetal); // base
+            b.Decor(new Vector3(x0, 0, 0), new Vector3(x1, shelfY[0] - 0.02f, z1), DarkMetal); // base
 
             // Letreiro vermelho com "onda" branca
             b.Emissive(new Vector3(x0, top, 0), new Vector3(x1, top + 0.35f, z1), CokeRed);
