@@ -17,8 +17,8 @@ public class Player
 
     private const float Gravity = -24f;
     private const float JumpSpeed = 7.0f;
-    private const float WalkSpeed = 3.5f;
-    private const float SprintSpeed = 6.0f;
+    private const float WalkSpeed = 4.0f;
+    private const float SprintSpeed = 12.0f;
     private const float MouseSensitivity = 0.0025f;
     private const float StickLookSensitivity = 2.8f; // rad/s
 
@@ -88,7 +88,7 @@ public class Player
             move.Normalize();
 
         bool sprint =
-            keyboard.IsKeyDown(Keys.LeftShift) || pad.Buttons.LeftStick == ButtonState.Pressed;
+            keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift) || pad.Buttons.LeftStick == ButtonState.Pressed;
         float speed = sprint ? SprintSpeed : WalkSpeed;
 
         _velocity.X = move.X * speed;
