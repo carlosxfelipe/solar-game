@@ -60,6 +60,18 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = 720;
         Window.AllowUserResizing = true;
         Window.Title = "Solar Game";
+#endif
+    }
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+        
+        _prevKeyboard = Keyboard.GetState();
+        _prevMouse = Mouse.GetState();
+        _prevPad = GamePad.GetState(PlayerIndex.One);
+        
+#if !(ANDROID || IOS)
         Window.ClientSizeChanged += OnWindowClientSizeChanged;
 #endif
     }
@@ -127,10 +139,10 @@ public class Game1 : Game
         // Desktop: clique (ou Enter/A) para começar/voltar a jogar
         if (_paused && !IsMobile && IsActive)
         {
-            bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
-            bool enter = keyboard.IsKeyDown(Keys.Enter) && _prevKeyboard.IsKeyUp(Keys.Enter);
+            bool inside = mouse.X >= 0 && mouse.Y >= 0 && mouse.X < GraphicsDevice.Viewport.Width && mouse.Y < GraphicsDevice.Viewport.Height;
+            bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released && inside;
             bool padA = pad.Buttons.A == ButtonState.Pressed && _prevPad.Buttons.A == ButtonState.Released;
-            if (click || enter || padA)
+            if (click || padA)
                 SetPaused(false);
         }
 
