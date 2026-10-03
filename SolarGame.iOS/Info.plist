@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>SolarGame.iOS</string>
+	<string>Supermarket Simulator</string>
 	<key>CFBundleIconFiles</key>
 	<array>
 		<string>GameThumbnail.png</string>
@@ -18,7 +18,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>CFBundleName</key>
-	<string>SolarGame.iOS</string>
+	<string>Supermarket Simulator</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UIStatusBarHidden</key>

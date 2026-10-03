@@ -23,7 +23,7 @@ if [ $? -eq 0 ]; then
     fi
     
     # Rename and move to the root folder with a short name
-    SHORT_NAME="SolarGame.apk"
+    SHORT_NAME="SupermarketSimulator.apk"
     cp "$APK_PATH" "./$SHORT_NAME"
     
     echo "Your APK was generated and copied to:"

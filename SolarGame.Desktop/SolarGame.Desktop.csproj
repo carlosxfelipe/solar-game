@@ -5,6 +5,9 @@
     <RollForward>Major</RollForward>
     <PublishReadyToRun>false</PublishReadyToRun>
     <TieredCompilation>false</TieredCompilation>
+    <AssemblyName>Supermarket Simulator</AssemblyName>
+    <Product>Supermarket Simulator</Product>
+    <Title>Supermarket Simulator</Title>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
