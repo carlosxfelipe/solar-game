@@ -29,6 +29,18 @@ public class Game1 : Game
 
     private Scene _scene;
     private Player _player;
+    private Hand _hand;
+    private readonly Inventory _inventory = new();
+
+    // Item sob a mira (dentro do alcance)
+    private PickupItem _target;
+    private const float ReachDistance = 3f;
+
+    // Mensagens rápidas no HUD
+    private string _message;
+    private float _messageTimer;
+    private string _selectedName;
+    private float _selectedNameTimer;
 
     private KeyboardState _prevKeyboard;
     private MouseState _prevMouse;
@@ -66,11 +78,11 @@ public class Game1 : Game
     protected override void Initialize()
     {
         base.Initialize();
-        
+
         _prevKeyboard = Keyboard.GetState();
         _prevMouse = Mouse.GetState();
         _prevPad = GamePad.GetState(PlayerIndex.One);
-        
+
 #if !(ANDROID || IOS)
         Window.ClientSizeChanged += OnWindowClientSizeChanged;
 #endif
@@ -98,6 +110,7 @@ public class Game1 : Game
 
         _scene = Supermarket.Build(GraphicsDevice);
         _player = new Player(_scene.Colliders, Supermarket.SpawnPosition);
+        _hand = new Hand();
     }
 
     protected override void Update(GameTime gameTime)
@@ -115,7 +128,8 @@ public class Game1 : Game
             _virtualGamepad.Update(GraphicsDevice.Viewport);
             var vPad = _virtualGamepad.PadState;
             if (vPad.ThumbSticks.Left != Vector2.Zero || vPad.Buttons.A == ButtonState.Pressed
-                || vPad.Buttons.LeftStick == ButtonState.Pressed || vPad.Buttons.Start == ButtonState.Pressed)
+                || vPad.Buttons.LeftStick == ButtonState.Pressed || vPad.Buttons.Start == ButtonState.Pressed
+                || vPad.Buttons.X == ButtonState.Pressed)
                 pad = vPad;
 
             lookX = _virtualGamepad.LookDelta.X * 2;
@@ -137,13 +151,17 @@ public class Game1 : Game
         }
 
         // Desktop: clique (ou Enter/A) para começar/voltar a jogar
+        bool justUnpaused = false;
         if (_paused && !IsMobile && IsActive)
         {
             bool inside = mouse.X >= 0 && mouse.Y >= 0 && mouse.X < GraphicsDevice.Viewport.Width && mouse.Y < GraphicsDevice.Viewport.Height;
             bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released && inside;
             bool padA = pad.Buttons.A == ButtonState.Pressed && _prevPad.Buttons.A == ButtonState.Released;
             if (click || padA)
+            {
                 SetPaused(false);
+                justUnpaused = true; // o mesmo clique não deve pegar um item
+            }
         }
 
         if (!_paused)
@@ -157,13 +175,85 @@ public class Game1 : Game
             }
 
             _player.Update(dt, keyboard, lookX, lookY, pad);
+
+            UpdateHotbarSelection(keyboard, mouse, pad);
+
+            // Item sob a mira
+            _target = _scene.Pickups.Raycast(new Ray(_player.EyePosition, _player.Forward), ReachDistance);
+
+            bool grab =
+                !justUnpaused
+                && (
+                    (!IsMobile && mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released)
+                    || (pad.Buttons.X == ButtonState.Pressed && _prevPad.Buttons.X == ButtonState.Released)
+                    || (pad.Triggers.Right > 0.5f && _prevPad.Triggers.Right <= 0.5f)
+                );
+
+            if (grab)
+                TryGrab();
         }
+
+        // Nome do item selecionado aparece por alguns segundos quando muda
+        var held = _inventory.SelectedStack;
+        if (held?.Product.Name != _selectedName)
+        {
+            _selectedName = held?.Product.Name;
+            _selectedNameTimer = _selectedName != null ? 2f : 0f;
+        }
+        _selectedNameTimer = MathF.Max(0f, _selectedNameTimer - dt);
+        _messageTimer = MathF.Max(0f, _messageTimer - dt);
+
+        _hand.Update(dt, _player.HorizontalSpeed, _player.OnGround, new Vector2(lookX, lookY), held?.Product);
 
         _prevKeyboard = keyboard;
         _prevMouse = Mouse.GetState();
         _prevPad = pad;
 
         base.Update(gameTime);
+    }
+
+    private void TryGrab()
+    {
+        _hand.Swing();
+        if (_target == null)
+            return;
+
+        int slot = _inventory.TryAdd(_target.Product);
+        if (slot < 0)
+        {
+            _message = "INVENTORY FULL";
+            _messageTimer = 1.5f;
+            return;
+        }
+
+        _scene.Pickups.Take(_target);
+        _inventory.Select(slot);
+        _target = _scene.Pickups.Raycast(new Ray(_player.EyePosition, _player.Forward), ReachDistance);
+    }
+
+    private void UpdateHotbarSelection(KeyboardState keyboard, MouseState mouse, GamePadState pad)
+    {
+        // Teclas 1-9
+        for (int i = 0; i < Inventory.SlotCount; i++)
+        {
+            var key = Keys.D1 + i;
+            if (keyboard.IsKeyDown(key) && _prevKeyboard.IsKeyUp(key))
+                _inventory.Select(i);
+        }
+
+        // Roda do mouse
+        if (!IsMobile)
+        {
+            int wheel = mouse.ScrollWheelValue - _prevMouse.ScrollWheelValue;
+            if (wheel != 0)
+                _inventory.Scroll(wheel > 0 ? -1 : 1);
+        }
+
+        // LB / RB no controle
+        if (pad.Buttons.LeftShoulder == ButtonState.Pressed && _prevPad.Buttons.LeftShoulder == ButtonState.Released)
+            _inventory.Scroll(-1);
+        if (pad.Buttons.RightShoulder == ButtonState.Pressed && _prevPad.Buttons.RightShoulder == ButtonState.Released)
+            _inventory.Scroll(1);
     }
 
     private void SetPaused(bool paused)
@@ -196,6 +286,11 @@ public class Game1 : Game
 
         _scene.Draw(GraphicsDevice, _effect);
 
+        if (_target != null && !_paused)
+            PickupSet.DrawOutline(GraphicsDevice, _effect, _target.Bounds, new Color(20, 20, 20));
+
+        _hand.Draw(GraphicsDevice, _effect);
+
         DrawHud();
 
         base.Draw(gameTime);
@@ -226,7 +321,8 @@ public class Game1 : Game
             if (!IsMobile)
             {
                 DrawCentered("WASD: MOVE   MOUSE: LOOK   SHIFT: RUN   SPACE: JUMP", cy + titleScale * 6, Math.Max(1, textScale / 2 + 1), Color.LightGray);
-                DrawCentered("ESC: PAUSE / QUIT", cy + titleScale * 9, Math.Max(1, textScale / 2 + 1), Color.Gray);
+                DrawCentered("CLICK: GRAB   1-9 / WHEEL: SELECT ITEM", cy + titleScale * 8, Math.Max(1, textScale / 2 + 1), Color.LightGray);
+                DrawCentered("ESC: PAUSE / QUIT", cy + titleScale * 10, Math.Max(1, textScale / 2 + 1), Color.Gray);
             }
         }
         else
@@ -234,7 +330,22 @@ public class Game1 : Game
             // Mira
             _spriteBatch.Draw(_pixel, new Rectangle(cx - 8, cy - 1, 16, 2), Color.White * 0.8f);
             _spriteBatch.Draw(_pixel, new Rectangle(cx - 1, cy - 8, 2, 16), Color.White * 0.8f);
+
+            int s = Math.Max(2, h / 300);
+
+            // Nome do item sob a mira
+            if (_target != null)
+                DrawCentered(_target.Product.Name, cy + 16, s, Color.White);
+
+            if (_messageTimer > 0 && _message != null)
+                DrawCentered(_message, cy + 16 + s * 8, s, new Color(255, 90, 90) * MathF.Min(1f, _messageTimer * 2f));
+
+            // Total de itens (canto superior direito)
+            string total = "ITEMS: " + _inventory.TotalItems;
+            _text.DrawString(_spriteBatch, total, w - total.Length * 4 * s - 16, 16, s, Color.White);
         }
+
+        DrawHotbar(w, h);
 
         if (IsMobile)
             _virtualGamepad.Draw(_spriteBatch, _text);
@@ -246,6 +357,72 @@ public class Game1 : Game
     {
         int width = text.Length * 4 * scale;
         _text.DrawString(_spriteBatch, text, GraphicsDevice.Viewport.Width / 2 - width / 2, y, scale, color);
+    }
+
+    /// <summary>Hotbar estilo Minecraft na parte de baixo da tela.</summary>
+    private void DrawHotbar(int w, int h)
+    {
+        int slot = Math.Clamp(h / 13, 36, 72);
+        int total = Inventory.SlotCount * slot;
+        int x0 = w / 2 - total / 2;
+        int y0 = h - slot - (IsMobile ? slot / 3 : 12);
+        int textScale = Math.Max(2, slot / 22);
+
+        // Nome do item selecionado (some após alguns segundos)
+        if (_selectedNameTimer > 0 && _selectedName != null)
+            DrawCentered(_selectedName, y0 - textScale * 9, textScale, Color.White * MathF.Min(1f, _selectedNameTimer * 2f));
+
+        _spriteBatch.Draw(_pixel, new Rectangle(x0 - 4, y0 - 4, total + 8, slot + 8), Color.Black * 0.5f);
+
+        for (int i = 0; i < Inventory.SlotCount; i++)
+        {
+            var r = new Rectangle(x0 + i * slot, y0, slot, slot);
+            _spriteBatch.Draw(_pixel, new Rectangle(r.X + 2, r.Y + 2, r.Width - 4, r.Height - 4), new Color(70, 70, 78) * 0.8f);
+
+            var stack = _inventory[i];
+            if (stack != null)
+            {
+                DrawItemIcon(stack.Product, r);
+                if (stack.Count > 1)
+                    _text.DrawNumber(_spriteBatch, stack.Count, r.Right - 3, r.Bottom - 5 * textScale - 4, textScale);
+            }
+
+            if (i == _inventory.Selected)
+                DrawRectOutline(new Rectangle(r.X - 2, r.Y - 2, r.Width + 4, r.Height + 4), 3, Color.White);
+        }
+    }
+
+    /// <summary>Ícone "pixelado" da bebida: garrafa alta com tampa ou lata baixa.</summary>
+    private void DrawItemIcon(Product p, Rectangle r)
+    {
+        int bw = (int)(r.Width * (p.IsBottle ? 0.3f : 0.4f));
+        int bh = (int)(r.Height * (p.IsBottle ? 0.6f : 0.45f));
+        int bx = r.Center.X - bw / 2;
+        int by = r.Bottom - (int)(r.Height * 0.15f) - bh;
+
+        var shade = Color.Lerp(p.Body, Color.Black, 0.3f);
+        _spriteBatch.Draw(_pixel, new Rectangle(bx, by, bw, bh), p.Body);
+        _spriteBatch.Draw(_pixel, new Rectangle(bx + bw * 2 / 3, by, bw - bw * 2 / 3, bh), shade);
+        _spriteBatch.Draw(_pixel, new Rectangle(bx, by + (int)(bh * 0.4f), bw, Math.Max(2, bh / 5)), p.Accent);
+
+        if (p.IsBottle)
+        {
+            int cw = Math.Max(2, bw / 2);
+            int ch = Math.Max(2, r.Height / 12);
+            _spriteBatch.Draw(_pixel, new Rectangle(r.Center.X - cw / 2, by - ch, cw, ch), p.Accent);
+        }
+        else
+        {
+            _spriteBatch.Draw(_pixel, new Rectangle(bx, by - 2, bw, 3), new Color(200, 202, 208));
+        }
+    }
+
+    private void DrawRectOutline(Rectangle r, int t, Color color)
+    {
+        _spriteBatch.Draw(_pixel, new Rectangle(r.X, r.Y, r.Width, t), color);
+        _spriteBatch.Draw(_pixel, new Rectangle(r.X, r.Bottom - t, r.Width, t), color);
+        _spriteBatch.Draw(_pixel, new Rectangle(r.X, r.Y, t, r.Height), color);
+        _spriteBatch.Draw(_pixel, new Rectangle(r.Right - t, r.Y, t, r.Height), color);
     }
 
     private Point GetWindowCenter() =>

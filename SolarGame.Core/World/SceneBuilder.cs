@@ -15,6 +15,8 @@ public class SceneBuilder
     private readonly List<VertexPositionColor> _opaque = new();
     private readonly List<VertexPositionColor> _transparent = new();
     private readonly List<BoundingBox> _colliders = new();
+    private readonly List<VertexPositionColor> _pickupVerts = new();
+    private readonly List<PickupItem> _pickups = new();
 
     // Sombreamento por face (igual ao estilo Minecraft)
     private const float ShadeTop = 1.0f;
@@ -65,6 +67,19 @@ public class SceneBuilder
     /// <summary>Apenas colisão invisível.</summary>
     public void Collider(Vector3 min, Vector3 max) => _colliders.Add(new BoundingBox(min, max));
 
+    /// <summary>Item que o jogador pode pegar (sem colisão), formado por uma ou mais caixas.</summary>
+    public void Pickup(Product product, params PickupPart[] parts)
+    {
+        int start = _pickupVerts.Count;
+        var bounds = new BoundingBox(parts[0].Min, parts[0].Max);
+        foreach (var p in parts)
+        {
+            AddBoxGeometry(_pickupVerts, p.Min, p.Max, p.Color, p.Faces, shaded: true);
+            bounds = BoundingBox.CreateMerged(bounds, new BoundingBox(p.Min, p.Max));
+        }
+        _pickups.Add(new PickupItem(product, bounds, start, _pickupVerts.Count - start));
+    }
+
     /// <summary>Quad horizontal (chão/teto) sem colisão.</summary>
     public void FloorQuad(float x0, float z0, float x1, float z1, float y, Color color)
     {
@@ -76,9 +91,15 @@ public class SceneBuilder
     }
 
     public Scene Build(GraphicsDevice device) =>
-        new(device, _opaque.ToArray(), _transparent.ToArray(), _colliders);
+        new(
+            device,
+            _opaque.ToArray(),
+            _transparent.ToArray(),
+            _colliders,
+            new PickupSet(device, _pickups, _pickupVerts.ToArray())
+        );
 
-    private static void AddBoxGeometry(
+    internal static void AddBoxGeometry(
         List<VertexPositionColor> target,
         Vector3 min,
         Vector3 max,
@@ -143,15 +164,18 @@ public class Scene
     private readonly int _transparentTriangles;
 
     public IReadOnlyList<BoundingBox> Colliders { get; }
+    public PickupSet Pickups { get; }
 
     public Scene(
         GraphicsDevice device,
         VertexPositionColor[] opaque,
         VertexPositionColor[] transparent,
-        List<BoundingBox> colliders
+        List<BoundingBox> colliders,
+        PickupSet pickups
     )
     {
         Colliders = colliders;
+        Pickups = pickups;
 
         _opaqueTriangles = opaque.Length / 3;
         if (opaque.Length > 0)
@@ -186,6 +210,7 @@ public class Scene
         device.BlendState = BlendState.Opaque;
         device.DepthStencilState = DepthStencilState.Default;
         DrawBuffer(device, effect, _opaque, _opaqueTriangles);
+        Pickups?.Draw(device, effect);
 
         device.BlendState = BlendState.AlphaBlend;
         device.DepthStencilState = DepthStencilState.DepthRead;
@@ -195,7 +220,7 @@ public class Scene
         device.DepthStencilState = DepthStencilState.Default;
     }
 
-    private static void DrawBuffer(
+    internal static void DrawBuffer(
         GraphicsDevice device,
         BasicEffect effect,
         VertexBuffer buffer,

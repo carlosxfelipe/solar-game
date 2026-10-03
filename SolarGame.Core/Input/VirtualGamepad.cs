@@ -72,6 +72,13 @@ public class VirtualGamepad
             btnSize,
             btnSize
         );
+        // Pegar item (X), acima do Pular
+        _buttonAreas[Buttons.X] = new Rectangle(
+            width - btnSize - padding,
+            height - btnSize * 2 - padding * 2,
+            btnSize,
+            btnSize
+        );
 
         bool leftStickActive = false;
 
@@ -171,6 +178,7 @@ public class VirtualGamepad
             {
                 Buttons.A => "JUMP",
                 Buttons.LeftStick => "RUN",
+                Buttons.X => "GRAB",
                 Buttons.Start => "MENU",
                 _ => kvp.Key.ToString(),
             };

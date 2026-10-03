@@ -33,6 +33,9 @@ public class Player
 
     public Vector3 EyePosition => Position + new Vector3(0, EyeHeight, 0);
 
+    public float HorizontalSpeed => new Vector2(_velocity.X, _velocity.Z).Length();
+    public bool OnGround => _onGround;
+
     public Vector3 Forward =>
         new(
             MathF.Sin(Yaw) * MathF.Cos(Pitch),

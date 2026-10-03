@@ -53,6 +53,9 @@ public class TextRenderer
         { '>', new byte[] { 0b100, 0b010, 0b001, 0b010, 0b100 } },
         { '<', new byte[] { 0b001, 0b010, 0b100, 0b010, 0b001 } },
         { ' ', new byte[] { 0b000, 0b000, 0b000, 0b000, 0b000 } },
+        { '-', new byte[] { 0b000, 0b000, 0b111, 0b000, 0b000 } },
+        { '.', new byte[] { 0b000, 0b000, 0b000, 0b000, 0b010 } },
+        { '!', new byte[] { 0b010, 0b010, 0b010, 0b000, 0b010 } },
     };
 
     public TextRenderer(Texture2D pixel)

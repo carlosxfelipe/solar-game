@@ -212,22 +212,28 @@ public static class Supermarket
     private static void AddBeverage(SceneBuilder b, Product p, float x, float y, float zBack, float zFront)
     {
         const float w = 0.09f;
+        const float d = 0.09f;
+        const float gap = 0.012f;
         float h = p.IsBottle ? 0.3f : 0.13f;
 
-        // Fileira de trás (um bloco representando os itens enfileirados)
-        b.Decor(new Vector3(x, y, zBack), new Vector3(x + w, y + h, zFront - 0.1f), Color.Lerp(p.Body, Color.Black, 0.15f));
-        // Item da frente
-        b.Decor(new Vector3(x, y, zFront - 0.09f), new Vector3(x + w, y + h, zFront), p.Body);
-        // Rótulo/faixa
-        b.Decor(
-            new Vector3(x, y + h * 0.45f, zFront),
-            new Vector3(x + w, y + h * 0.7f, zFront + 0.002f),
-            p.Accent,
-            SceneBuilder.Faces.Front
-        );
-        // Tampa (garrafa) ou topo metálico (lata)
-        if (p.IsBottle)
-            b.Decor(new Vector3(x + 0.03f, y + h, zFront - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zFront - 0.03f), p.Accent);
+        // Fileira de itens individuais (o da frente primeiro); cada um pode ser pego
+        for (float zf = zFront; zf - d >= zBack - 0.001f; zf -= d + gap)
+        {
+            var body = new PickupPart(new Vector3(x, y, zf - d), new Vector3(x + w, y + h, zf), p.Body);
+            // Rótulo/faixa
+            var label = new PickupPart(
+                new Vector3(x, y + h * 0.45f, zf),
+                new Vector3(x + w, y + h * 0.7f, zf + 0.002f),
+                p.Accent,
+                SceneBuilder.Faces.Front
+            );
+            // Tampa (garrafa) ou topo metálico (lata)
+            var top = p.IsBottle
+                ? new PickupPart(new Vector3(x + 0.03f, y + h, zf - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zf - 0.03f), p.Accent)
+                : new PickupPart(new Vector3(x + 0.005f, y + h, zf - d + 0.005f), new Vector3(x + w - 0.005f, y + h + 0.008f, zf - 0.005f), Metal);
+
+            b.Pickup(p, body, label, top);
+        }
     }
 
     // ---------------------------------------------------------------
