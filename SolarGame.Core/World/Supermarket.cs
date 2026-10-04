@@ -30,8 +30,8 @@ public static class Supermarket
     /// <summary>Produtos da The Coca-Cola Company (cor do corpo, cor da tampa/rótulo, é garrafa?).</summary>
     public static readonly Product[] Beverages =
     {
-        new("Coca-Cola", CokeRed, Color.White, true),
-        new("Coca-Cola Zero", new Color(25, 25, 25), CokeRed, true),
+        new("Coca-Cola", new Color(25, 25, 25), CokeRed, true),
+        new("Coca-Cola Zero", new Color(25, 25, 25), CokeRed, true, new Color(15, 15, 15)),
         new("Coca-Cola Lata", CokeRed, new Color(220, 220, 225), false),
         new("Sprite", new Color(0, 135, 70), new Color(240, 230, 60), true),
         new("Fanta Laranja", new Color(255, 125, 0), new Color(0, 70, 160), true),
@@ -242,7 +242,7 @@ public static class Supermarket
         );
         // Tampa (garrafa) ou topo metálico (lata)
         var top = p.IsBottle
-            ? new PickupPart(new Vector3(x + 0.03f, y + h, zf - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zf - 0.03f), p.Accent)
+            ? new PickupPart(new Vector3(x + 0.03f, y + h, zf - 0.06f), new Vector3(x + w - 0.03f, y + h + 0.03f, zf - 0.03f), p.CapColor)
             : new PickupPart(new Vector3(x + 0.005f, y + h, zf - d + 0.005f), new Vector3(x + w - 0.005f, y + h + 0.008f, zf - 0.005f), Metal);
 
         return new[] { body, label, top };
@@ -407,4 +407,8 @@ public static class Supermarket
 }
 
 /// <summary>Produto de bebida exibido nas geladeiras.</summary>
-public readonly record struct Product(string Name, Color Body, Color Accent, bool IsBottle);
+public readonly record struct Product(string Name, Color Body, Color Accent, bool IsBottle, Color? Cap = null)
+{
+    /// <summary>Cor da tampa da garrafa (por padrão, a mesma do rótulo).</summary>
+    public Color CapColor => Cap ?? Accent;
+}

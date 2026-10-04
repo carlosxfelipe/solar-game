@@ -154,7 +154,7 @@ public class Hand
         SceneBuilder.AddBoxGeometry(t, new Vector3(-hw - e, y0 + h * 0.45f, -hw - e), new Vector3(hw + e, y0 + h * 0.7f, hw + e), p.Accent, sides, true);
 
         if (p.IsBottle)
-            SceneBuilder.AddBoxGeometry(t, new Vector3(-0.015f, y0 + h, -0.015f), new Vector3(0.015f, y0 + h + 0.03f, 0.015f), p.Accent, SceneBuilder.Faces.All, true);
+            SceneBuilder.AddBoxGeometry(t, new Vector3(-0.015f, y0 + h, -0.015f), new Vector3(0.015f, y0 + h + 0.03f, 0.015f), p.CapColor, SceneBuilder.Faces.All, true);
         else
             SceneBuilder.AddBoxGeometry(t, new Vector3(-hw + 0.005f, y0 + h, -hw + 0.005f), new Vector3(hw - 0.005f, y0 + h + 0.008f, hw - 0.005f), CanTop, SceneBuilder.Faces.All, true);
     }

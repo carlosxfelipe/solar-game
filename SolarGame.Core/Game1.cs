@@ -458,7 +458,7 @@ public class Game1 : Game
         {
             int cw = Math.Max(2, bw / 2);
             int ch = Math.Max(2, r.Height / 12);
-            _spriteBatch.Draw(_pixel, new Rectangle(r.Center.X - cw / 2, by - ch, cw, ch), p.Accent);
+            _spriteBatch.Draw(_pixel, new Rectangle(r.Center.X - cw / 2, by - ch, cw, ch), p.CapColor);
         }
         else
         {
