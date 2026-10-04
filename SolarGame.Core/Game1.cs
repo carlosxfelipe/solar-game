@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SolarGame.Input;
@@ -26,6 +28,7 @@ public class Game1 : Game
     private Texture2D _pixel;
     private TextRenderer _text;
     private VirtualGamepad _virtualGamepad;
+    private SoundEffect _stepSound;
 
     private Scene _scene;
     private Player _player;
@@ -113,6 +116,13 @@ public class Game1 : Game
         _scene = Supermarket.Build(GraphicsDevice);
         _player = new Player(_scene.Colliders, Supermarket.SpawnPosition);
         _hand = new Hand();
+
+        using (var stream = TitleContainer.OpenStream("Content/step.wav"))
+        {
+            _stepSound = SoundEffect.FromStream(stream);
+        }
+        
+        _player.OnStep += () => _stepSound.Play(0.5f, 0f, 0f);
     }
 
     protected override void Update(GameTime gameTime)

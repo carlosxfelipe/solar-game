@@ -33,4 +33,10 @@
   <ItemGroup>
     <Compile Include="..\SolarGame.Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\SolarGame.Core\Content\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
 </Project>

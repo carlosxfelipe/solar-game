@@ -16,4 +16,9 @@
   <ItemGroup>
     <Compile Include="..\SolarGame.Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="..\SolarGame.Core\Content\**\*.*">
+      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </AndroidAsset>
+  </ItemGroup>
 </Project>

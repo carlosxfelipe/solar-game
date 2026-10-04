@@ -30,6 +30,9 @@ public class Player
 
     private Vector3 _velocity;
     private bool _onGround;
+    private float _distanceWalked;
+
+    public event Action OnStep;
 
     public Vector3 EyePosition => Position + new Vector3(0, EyeHeight, 0);
 
@@ -108,9 +111,29 @@ public class Player
         }
 
         // Movimento com colisão (eixo por eixo)
+        Vector3 oldPos = Position;
         MoveAxis(_velocity.X * dt, 0);
         MoveAxis(_velocity.Y * dt, 1);
         MoveAxis(_velocity.Z * dt, 2);
+
+        if (_onGround)
+        {
+            float dist = new Vector2(Position.X - oldPos.X, Position.Z - oldPos.Z).Length();
+            if (dist > 0.001f)
+            {
+                _distanceWalked += dist;
+                float stepLength = sprint ? 2.2f : 1.6f;
+                if (_distanceWalked > stepLength)
+                {
+                    _distanceWalked -= stepLength;
+                    OnStep?.Invoke();
+                }
+            }
+        }
+        else
+        {
+            _distanceWalked = 0f;
+        }
 
         // Segurança: se atravessar o chão por algum motivo, volta pra cima
         if (Position.Y < -5f)

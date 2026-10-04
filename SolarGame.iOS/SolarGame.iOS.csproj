@@ -13,4 +13,9 @@
   <ItemGroup>
     <Compile Include="..\SolarGame.Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
+  <ItemGroup>
+    <BundleResource Include="..\SolarGame.Core\Content\**\*.*">
+      <Link>Content\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </BundleResource>
+  </ItemGroup>
 </Project>
