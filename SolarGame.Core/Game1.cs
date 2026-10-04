@@ -121,7 +121,7 @@ public class Game1 : Game
         {
             _stepSound = SoundEffect.FromStream(stream);
         }
-        
+
         _player.OnStep += () => _stepSound.Play(0.5f, 0f, 0f);
     }
 
