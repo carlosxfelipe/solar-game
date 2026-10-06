@@ -79,4 +79,4 @@ dotnet build SolarGame.iOS -t:Run
 
 ## 📄 Licença
 
-Este projeto é licenciado sob a [GNU General Public License v3.0](LICENSE).
+Este projeto é licenciado sob a [MIT License](LICENSE).
