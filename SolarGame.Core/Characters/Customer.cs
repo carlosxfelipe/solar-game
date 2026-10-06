@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using SolarGame.World;
 
-namespace SolarGame;
+namespace SolarGame.Characters;
 
 /// <summary>
 /// Exemplo de uma Skin específica herdando de CharacterModel.
 /// </summary>
-public class TestCharacter : CharacterModel
+public class Customer : CharacterModel
 {
     private enum NpcState { Idle, Walking }
     private NpcState _currentState = NpcState.Idle;
@@ -16,6 +16,24 @@ public class TestCharacter : CharacterModel
     private float _targetYaw = 0f;
     private float _walkTime = 0f;
     private readonly Random _rng = new Random();
+
+    // Cores personalizáveis para reutilizar a classe
+    public Color SkinColor { get; set; } = new Color(222, 170, 128);
+    public Color ShirtColor { get; set; } = new Color(80, 160, 100);
+    public Color PantsColor { get; set; } = new Color(60, 80, 150);
+    public Color ShoesColor { get; set; } = new Color(40, 40, 40);
+    public Color HairColor { get; set; } = new Color(40, 30, 20);
+    public Color PupilColor { get; set; } = new Color(40, 50, 120);
+    public Color BeardColor { get; set; } = new Color(90, 60, 40);
+    public Color NoseColor { get; set; } = new Color(190, 130, 90);
+
+    public void ApplyColors()
+    {
+        Head.Clear(); Torso.Clear();
+        LeftArm.Clear(); RightArm.Clear();
+        LeftLeg.Clear(); RightLeg.Clear();
+        BuildSkin();
+    }
 
     public IReadOnlyList<BoundingBox> Colliders;
 
@@ -98,55 +116,46 @@ public class TestCharacter : CharacterModel
 
     protected override void BuildSkin()
     {
-        // Cores genéricas para testar
-        Color skinColor = new Color(222, 170, 128);
-        Color shirtColor = new Color(80, 160, 100);
-        Color pantsColor = new Color(60, 80, 150);
-        Color shoesColor = new Color(40, 40, 40);
-
         // Cabeça (Pivô no pescoço Y=1.5) - Local Y de 0 a 0.38
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.19f, 0f, -0.19f), new Vector3(0.19f, 0.38f, 0.19f), skinColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.19f, 0f, -0.19f), new Vector3(0.19f, 0.38f, 0.19f), SkinColor, SceneBuilder.Faces.All, true);
 
         // Cabelo (Dark)
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.195f, 0.28f, -0.195f), new Vector3(0.195f, 0.385f, 0.195f), new Color(40, 30, 20), SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.195f, 0.28f, -0.195f), new Vector3(0.195f, 0.385f, 0.195f), HairColor, SceneBuilder.Faces.All, true);
 
         // Face Details (Steve style facing -Z)
         Color scleraColor = new Color(250, 250, 250);
-        Color pupilColor = new Color(40, 50, 120); // Dark Blueish
-        Color noseColor = new Color(190, 130, 90); // Darker skin
-        Color beardColor = new Color(90, 60, 40);
 
         // Left Eye (Sclera outer, pupil inner)
         SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.142f, 0.142f, -0.195f), new Vector3(-0.095f, 0.19f, -0.19f), scleraColor, SceneBuilder.Faces.All, false);
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.095f, 0.142f, -0.195f), new Vector3(-0.047f, 0.19f, -0.19f), pupilColor, SceneBuilder.Faces.All, false);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.095f, 0.142f, -0.195f), new Vector3(-0.047f, 0.19f, -0.19f), PupilColor, SceneBuilder.Faces.All, false);
 
         // Right Eye (Pupil inner, Sclera outer)
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(0.047f, 0.142f, -0.195f), new Vector3(0.095f, 0.19f, -0.19f), pupilColor, SceneBuilder.Faces.All, false);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(0.047f, 0.142f, -0.195f), new Vector3(0.095f, 0.19f, -0.19f), PupilColor, SceneBuilder.Faces.All, false);
         SceneBuilder.AddBoxGeometry(Head, new Vector3(0.095f, 0.142f, -0.195f), new Vector3(0.142f, 0.19f, -0.19f), scleraColor, SceneBuilder.Faces.All, false);
 
         // Nose
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.047f, 0.095f, -0.195f), new Vector3(0.047f, 0.142f, -0.19f), noseColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.047f, 0.095f, -0.195f), new Vector3(0.047f, 0.142f, -0.19f), NoseColor, SceneBuilder.Faces.All, true);
 
         // Mouth / Beard
-        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.095f, 0.047f, -0.195f), new Vector3(0.095f, 0.095f, -0.19f), beardColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(Head, new Vector3(-0.095f, 0.047f, -0.195f), new Vector3(0.095f, 0.095f, -0.19f), BeardColor, SceneBuilder.Faces.All, true);
 
         // Tronco (Pivô no quadril Y=0.8)
-        SceneBuilder.AddBoxGeometry(Torso, new Vector3(-0.25f, 0f, -0.12f), new Vector3(0.25f, 0.7f, 0.12f), shirtColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(Torso, new Vector3(-0.25f, 0f, -0.12f), new Vector3(0.25f, 0.7f, 0.12f), ShirtColor, SceneBuilder.Faces.All, true);
 
         // Braço Esquerdo (Pivô no ombro Y=1.5, X=-0.35)
-        SceneBuilder.AddBoxGeometry(LeftArm, new Vector3(-0.1f, -0.7f, -0.12f), new Vector3(0.1f, -0.2f, 0.12f), skinColor, SceneBuilder.Faces.All, true);
-        SceneBuilder.AddBoxGeometry(LeftArm, new Vector3(-0.1f, -0.2f, -0.12f), new Vector3(0.1f, 0f, 0.12f), shirtColor, SceneBuilder.Faces.All, true); // Manga
+        SceneBuilder.AddBoxGeometry(LeftArm, new Vector3(-0.1f, -0.7f, -0.12f), new Vector3(0.1f, -0.2f, 0.12f), SkinColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(LeftArm, new Vector3(-0.1f, -0.2f, -0.12f), new Vector3(0.1f, 0f, 0.12f), ShirtColor, SceneBuilder.Faces.All, true); // Manga
 
         // Braço Direito (Pivô no ombro Y=1.5, X=0.35)
-        SceneBuilder.AddBoxGeometry(RightArm, new Vector3(-0.1f, -0.7f, -0.12f), new Vector3(0.1f, -0.2f, 0.12f), skinColor, SceneBuilder.Faces.All, true);
-        SceneBuilder.AddBoxGeometry(RightArm, new Vector3(-0.1f, -0.2f, -0.12f), new Vector3(0.1f, 0f, 0.12f), shirtColor, SceneBuilder.Faces.All, true); // Manga
+        SceneBuilder.AddBoxGeometry(RightArm, new Vector3(-0.1f, -0.7f, -0.12f), new Vector3(0.1f, -0.2f, 0.12f), SkinColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(RightArm, new Vector3(-0.1f, -0.2f, -0.12f), new Vector3(0.1f, 0f, 0.12f), ShirtColor, SceneBuilder.Faces.All, true); // Manga
 
         // Perna Esquerda (Pivô no quadril Y=0.8, X=-0.125)
-        SceneBuilder.AddBoxGeometry(LeftLeg, new Vector3(-0.125f, -0.65f, -0.12f), new Vector3(0.125f, 0f, 0.12f), pantsColor, SceneBuilder.Faces.All, true);
-        SceneBuilder.AddBoxGeometry(LeftLeg, new Vector3(-0.125f, -0.8f, -0.12f), new Vector3(0.125f, -0.65f, 0.12f), shoesColor, SceneBuilder.Faces.All, true); // Sapato
+        SceneBuilder.AddBoxGeometry(LeftLeg, new Vector3(-0.125f, -0.65f, -0.12f), new Vector3(0.125f, 0f, 0.12f), PantsColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(LeftLeg, new Vector3(-0.125f, -0.8f, -0.12f), new Vector3(0.125f, -0.65f, 0.12f), ShoesColor, SceneBuilder.Faces.All, true); // Sapato
 
         // Perna Direita (Pivô no quadril Y=0.8, X=0.125)
-        SceneBuilder.AddBoxGeometry(RightLeg, new Vector3(-0.125f, -0.65f, -0.12f), new Vector3(0.125f, 0f, 0.12f), pantsColor, SceneBuilder.Faces.All, true);
-        SceneBuilder.AddBoxGeometry(RightLeg, new Vector3(-0.125f, -0.8f, -0.12f), new Vector3(0.125f, -0.65f, 0.12f), shoesColor, SceneBuilder.Faces.All, true); // Sapato
+        SceneBuilder.AddBoxGeometry(RightLeg, new Vector3(-0.125f, -0.65f, -0.12f), new Vector3(0.125f, 0f, 0.12f), PantsColor, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(RightLeg, new Vector3(-0.125f, -0.8f, -0.12f), new Vector3(0.125f, -0.65f, 0.12f), ShoesColor, SceneBuilder.Faces.All, true); // Sapato
     }
 }
