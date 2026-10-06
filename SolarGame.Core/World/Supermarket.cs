@@ -63,6 +63,8 @@ public static class Supermarket
         BuildGondolas(b, rng);
         BuildPromoIsland(b);
         BuildCheckouts(b);
+        BuildTruck(b);
+        BuildNpcDriver(b);
 
         return b.Build(device);
     }
@@ -405,6 +407,142 @@ public static class Supermarket
             b.Decor(new Vector3(x0 + 0.05f, 0.9f, z0 + 0.05f), new Vector3(x0 + 0.1f, 2.3f, z0 + 0.1f), Metal);
             b.Emissive(new Vector3(x0 - 0.1f, 2.3f, z0 - 0.05f), new Vector3(x0 + 0.25f, 2.55f, z0 + 0.2f), new Color(40, 200, 90));
         }
+    }
+
+    private static void BuildTruck(SceneBuilder b)
+    {
+        // Truck parameters (parking lot area)
+        float tx = 2f;
+        float tz = Depth + 5f; // Closer to the store
+
+        Color cabColor = new Color(230, 230, 230);
+        Color grillColor = new Color(40, 40, 40);
+        Color lightColor = new Color(255, 255, 220);
+        Color bumperColor = new Color(60, 60, 60);
+
+        // Cab lower body (Hood)
+        b.Box(new Vector3(tx, 0.4f, tz), new Vector3(tx + 2.4f, 1.4f, tz + 2.0f), cabColor);
+        // Cab upper body (Cabin)
+        b.Box(new Vector3(tx, 1.4f, tz + 0.6f), new Vector3(tx + 2.4f, 2.8f, tz + 2.0f), cabColor);
+
+        // Windshield
+        b.Box(new Vector3(tx + 0.1f, 1.45f, tz + 0.55f), new Vector3(tx + 2.3f, 2.5f, tz + 0.65f), GlassTint);
+        // Side windows
+        b.Box(new Vector3(tx - 0.05f, 1.45f, tz + 0.65f), new Vector3(tx + 2.45f, 2.5f, tz + 1.8f), GlassTint);
+
+        // Front Grille & Lights
+        b.Box(new Vector3(tx + 0.6f, 0.6f, tz - 0.05f), new Vector3(tx + 1.8f, 1.2f, tz + 0.1f), grillColor);
+        b.Box(new Vector3(tx + 0.2f, 0.8f, tz - 0.05f), new Vector3(tx + 0.4f, 1.0f, tz + 0.1f), lightColor); // Left light
+        b.Box(new Vector3(tx + 2.0f, 0.8f, tz - 0.05f), new Vector3(tx + 2.2f, 1.0f, tz + 0.1f), lightColor); // Right light
+
+        // Bumper
+        b.Box(new Vector3(tx - 0.1f, 0.2f, tz - 0.1f), new Vector3(tx + 2.5f, 0.5f, tz + 0.2f), bumperColor);
+
+        // Chassis/Frame between cab and trailer
+        b.Box(new Vector3(tx + 0.6f, 0.3f, tz + 2.0f), new Vector3(tx + 1.8f, 0.5f, tz + 3.0f), bumperColor);
+
+        // Trailer (Red)
+        Color roofColor = new Color(200, 200, 200);
+        b.Box(new Vector3(tx - 0.1f, 0.5f, tz + 2.8f), new Vector3(tx + 2.5f, 3.6f, tz + 10f), CokeRed);
+        b.Box(new Vector3(tx - 0.1f, 3.6f, tz + 2.8f), new Vector3(tx + 2.5f, 3.7f, tz + 10f), roofColor); // Trailer roof
+
+        // White Stripe / Logo placeholder on trailer
+        b.Box(new Vector3(tx - 0.15f, 1.5f, tz + 4.5f), new Vector3(tx + 2.55f, 2.5f, tz + 8.5f), new Color(250, 250, 250));
+
+        // Wheels
+        Color wheelColor = new Color(20, 20, 20);
+        Color hubColor = new Color(150, 150, 150);
+        float wRadius = 0.4f;
+        float wWidth = 0.3f;
+        float hubRadius = 0.2f;
+
+        void AddWheel(float x, float z)
+        {
+            // Tire
+            b.Box(new Vector3(x - wWidth / 2, 0f, z - wRadius), new Vector3(x + wWidth / 2, wRadius * 2, z + wRadius), wheelColor);
+            // Hubcap
+            b.Box(new Vector3(x - (wWidth / 2 + 0.05f), wRadius - hubRadius, z - hubRadius), new Vector3(x + (wWidth / 2 + 0.05f), wRadius + hubRadius, z + hubRadius), hubColor);
+        }
+
+        // Cab wheels (Front)
+        AddWheel(tx, tz + 0.8f);
+        AddWheel(tx + 2.4f, tz + 0.8f);
+
+        // Trailer wheels (Rear)
+        AddWheel(tx - 0.1f, tz + 7.5f);
+        AddWheel(tx + 2.5f, tz + 7.5f);
+        AddWheel(tx - 0.1f, tz + 8.8f);
+        AddWheel(tx + 2.5f, tz + 8.8f);
+    }
+
+    private static void BuildNpcDriver(SceneBuilder b)
+    {
+        float tx = 2f;
+        float tz = Depth + 5f;
+
+        // NPC parameters (Driver)
+        float nx = tx - 1.5f;
+        float nz = tz + 1f;
+        Color skinColor = new Color(240, 190, 150);
+        Color shirtGrey = new Color(160, 160, 160);
+        Color stripeNeon = new Color(180, 255, 40); // Neon green/yellow
+        Color shoeColor = new Color(30, 30, 30);
+
+        // Shoes (No gap between legs, thicker depth)
+        b.Box(new Vector3(nx - 0.25f, 0f, nz - 0.12f), new Vector3(nx, 0.15f, nz + 0.14f), shoeColor); // Left shoe
+        b.Box(new Vector3(nx, 0f, nz - 0.12f), new Vector3(nx + 0.25f, 0.15f, nz + 0.14f), shoeColor); // Right shoe
+
+        // Legs (Red, no gap, thicker depth)
+        b.Box(new Vector3(nx - 0.25f, 0.15f, nz - 0.12f), new Vector3(nx, 0.8f, nz + 0.12f), CokeRed); // Left leg
+        b.Box(new Vector3(nx, 0.15f, nz - 0.12f), new Vector3(nx + 0.25f, 0.8f, nz + 0.12f), CokeRed); // Right leg
+
+        // Torso (Front is Grey with Red Collar and Neon Stripes, Back is Red)
+        b.Box(new Vector3(nx - 0.25f, 0.8f, nz - 0.12f), new Vector3(nx + 0.25f, 1.35f, nz), shirtGrey); // Front main
+        b.Box(new Vector3(nx - 0.25f, 1.35f, nz - 0.12f), new Vector3(nx + 0.25f, 1.5f, nz), CokeRed); // Front collar
+        b.Box(new Vector3(nx - 0.25f, 0.8f, nz), new Vector3(nx + 0.25f, 1.5f, nz + 0.12f), CokeRed); // Back
+        
+        // Chest stripes (closer together, neon)
+        b.Box(new Vector3(nx - 0.26f, 1.22f, nz - 0.13f), new Vector3(nx + 0.26f, 1.25f, nz + 0.01f), stripeNeon); // Stripe 1 (Front only)
+        b.Box(new Vector3(nx - 0.26f, 1.15f, nz - 0.13f), new Vector3(nx + 0.26f, 1.18f, nz + 0.01f), stripeNeon); // Stripe 2 (Front only)
+
+        // Arms (Red sleeves, skin hands, thicker depth)
+        b.Box(new Vector3(nx - 0.45f, 1.1f, nz - 0.12f), new Vector3(nx - 0.25f, 1.5f, nz + 0.12f), CokeRed); // Left arm sleeve
+        b.Box(new Vector3(nx - 0.46f, 1.22f, nz - 0.13f), new Vector3(nx - 0.24f, 1.25f, nz + 0.13f), stripeNeon); // Left sleeve stripe (top)
+        b.Box(new Vector3(nx - 0.455f, 1.18f, nz - 0.125f), new Vector3(nx - 0.245f, 1.22f, nz + 0.125f), shirtGrey); // Left sleeve grey gap
+        b.Box(new Vector3(nx - 0.46f, 1.15f, nz - 0.13f), new Vector3(nx - 0.24f, 1.18f, nz + 0.13f), stripeNeon); // Left sleeve stripe (bottom)
+        b.Box(new Vector3(nx - 0.45f, 0.7f, nz - 0.12f), new Vector3(nx - 0.25f, 1.1f, nz + 0.12f), skinColor); // Left hand
+
+        b.Box(new Vector3(nx + 0.25f, 1.1f, nz - 0.12f), new Vector3(nx + 0.45f, 1.5f, nz + 0.12f), CokeRed); // Right arm sleeve
+        b.Box(new Vector3(nx + 0.24f, 1.22f, nz - 0.13f), new Vector3(nx + 0.46f, 1.25f, nz + 0.13f), stripeNeon); // Right sleeve stripe (top)
+        b.Box(new Vector3(nx + 0.245f, 1.18f, nz - 0.125f), new Vector3(nx + 0.455f, 1.22f, nz + 0.125f), shirtGrey); // Right sleeve grey gap
+        b.Box(new Vector3(nx + 0.24f, 1.15f, nz - 0.13f), new Vector3(nx + 0.46f, 1.18f, nz + 0.13f), stripeNeon); // Right sleeve stripe (bottom)
+        b.Box(new Vector3(nx + 0.25f, 0.7f, nz - 0.12f), new Vector3(nx + 0.45f, 1.1f, nz + 0.12f), skinColor); // Right hand
+
+        // Head (Skin color)
+        b.Box(new Vector3(nx - 0.19f, 1.5f, nz - 0.19f), new Vector3(nx + 0.19f, 1.88f, nz + 0.19f), skinColor);
+
+        // Face Details (Steve style facing -Z)
+        Color scleraColor = new Color(250, 250, 250);
+        Color pupilColor = new Color(40, 50, 120); // Dark Blueish
+        Color noseColor = new Color(190, 130, 90); // Darker skin
+        Color beardColor = new Color(90, 60, 40);
+
+        // Left Eye (Sclera outer, pupil inner)
+        b.Box(new Vector3(nx - 0.142f, 1.642f, nz - 0.195f), new Vector3(nx - 0.095f, 1.69f, nz - 0.19f), scleraColor);
+        b.Box(new Vector3(nx - 0.095f, 1.642f, nz - 0.195f), new Vector3(nx - 0.047f, 1.69f, nz - 0.19f), pupilColor);
+
+        // Right Eye (Pupil inner, Sclera outer)
+        b.Box(new Vector3(nx + 0.047f, 1.642f, nz - 0.195f), new Vector3(nx + 0.095f, 1.69f, nz - 0.19f), pupilColor);
+        b.Box(new Vector3(nx + 0.095f, 1.642f, nz - 0.195f), new Vector3(nx + 0.142f, 1.69f, nz - 0.19f), scleraColor);
+
+        // Nose
+        b.Box(new Vector3(nx - 0.047f, 1.595f, nz - 0.195f), new Vector3(nx + 0.047f, 1.642f, nz - 0.19f), noseColor);
+
+        // Mouth / Beard
+        b.Box(new Vector3(nx - 0.095f, 1.547f, nz - 0.195f), new Vector3(nx + 0.095f, 1.595f, nz - 0.19f), beardColor);
+
+        // Hair (Dark)
+        b.Box(new Vector3(nx - 0.195f, 1.78f, nz - 0.195f), new Vector3(nx + 0.195f, 1.885f, nz + 0.195f), new Color(40, 30, 20));
     }
 }
 
