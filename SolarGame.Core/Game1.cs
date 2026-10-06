@@ -34,6 +34,7 @@ public class Game1 : Game
     private Player _player;
     private Hand _hand;
     private readonly Inventory _inventory = new();
+    private TestCharacter _testNpc;
 
     // Item sob a mira (dentro do alcance)
     private PickupItem _target;
@@ -109,13 +110,18 @@ public class Game1 : Game
             TextureEnabled = false,
             FogEnabled = true,
             FogColor = new Vector3(0.85f, 0.87f, 0.9f),
-            FogStart = 25f,
-            FogEnd = 80f,
+            FogStart = 50f,
+            FogEnd = 100f,
         };
 
         _scene = Supermarket.Build(GraphicsDevice);
         _player = new Player(_scene.Colliders, Supermarket.SpawnPosition);
         _hand = new Hand();
+
+        _testNpc = new TestCharacter();
+        _testNpc.Colliders = _scene.Colliders;
+        // Posição no meio da loja para a gente ver
+        _testNpc.Position = new Vector3(6f, 0f, 15f);
 
         using (var stream = TitleContainer.OpenStream("Content/step.wav"))
         {
@@ -175,6 +181,9 @@ public class Game1 : Game
                 justUnpaused = true; // o mesmo clique não deve pegar um item
             }
         }
+
+        // Atualiza a lógica de "passeio" (estado, pausas e andadas aleatórias)
+        _testNpc.Update(dt);
 
         if (!_paused)
         {
@@ -339,6 +348,8 @@ public class Game1 : Game
         _effect.World = Matrix.Identity;
 
         _scene.Draw(GraphicsDevice, _effect);
+
+        _testNpc.Draw(_effect);
 
         if (_target != null && !_paused)
             PickupSet.DrawOutline(GraphicsDevice, _effect, _target.Bounds, new Color(20, 20, 20));

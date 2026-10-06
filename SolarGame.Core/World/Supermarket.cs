@@ -59,6 +59,7 @@ public static class Supermarket
         var rng = new Random(42);
 
         BuildShell(b);
+        BuildTrees(b, rng);
         BuildFridges(b, rng);
         BuildGondolas(b, rng);
         BuildPromoIsland(b);
@@ -70,6 +71,53 @@ public static class Supermarket
     }
 
     // ---------------------------------------------------------------
+    // Vegetação: Árvores estilo Voxel
+    // ---------------------------------------------------------------
+    private static void BuildTrees(SceneBuilder b, Random rng)
+    {
+        Color trunkColor = new Color(100, 65, 40);
+        Color leavesColor = new Color(50, 160, 60);
+
+        for (int i = 0; i < 80; i++) // 80 árvores espalhadas
+        {
+            float x = (float)(rng.NextDouble() * 130.0 - 50.0);
+            float z = (float)(rng.NextDouble() * 130.0 - 50.0);
+
+            // Evita criar dentro/colado na loja
+            if (x > -4 && x < Width + 4 && z > -4 && z < Depth + 4) continue;
+
+            // Evita criar no estacionamento
+            if (x > -50 && x < 80 && z > Depth - 2 && z < Depth + 42) continue;
+
+            // Tronco
+            float tHeight = (float)(rng.NextDouble() * 1.5 + 2.5); // 2.5 a 4.0 metros de altura
+            float tWidth = 0.5f;
+            b.Box(new Vector3(x - tWidth / 2, -0.02f, z - tWidth / 2), new Vector3(x + tWidth / 2, tHeight, z + tWidth / 2), trunkColor);
+
+            // Adiciona colisão física ao tronco
+            b.Collider(new Vector3(x - tWidth / 2, 0, z - tWidth / 2), new Vector3(x + tWidth / 2, tHeight, z + tWidth / 2));
+
+            // Copas compostas de blocos (Minecraft style)
+            float baseH = tHeight - 1.0f;
+            float s = 0.6f; // Tamanho base de cada subdivisão da folha
+            Color lDark = new Color(40, 140, 50); // Tom levemente mais escuro pra quebrar a cor
+
+            // Camada 1: 5x5 (2 blocos de raio pra cada lado)
+            b.Box(new Vector3(x - 2 * s, baseH, z - 2 * s), new Vector3(x + 2 * s, baseH + s, z + 2 * s), leavesColor);
+
+            // Camada 2: 5x5
+            b.Box(new Vector3(x - 2 * s, baseH + s, z - 2 * s), new Vector3(x + 2 * s, baseH + 2 * s, z + 2 * s), lDark);
+
+            // Camada 3: 3x3
+            b.Box(new Vector3(x - 1.2f * s, baseH + 2 * s, z - 1.2f * s), new Vector3(x + 1.2f * s, baseH + 3 * s, z + 1.2f * s), leavesColor);
+
+            // Camada 4: Topo cruzado (simulando 3x3 sem os cantos)
+            b.Box(new Vector3(x - 0.5f * s, baseH + 3 * s, z - 1.2f * s), new Vector3(x + 0.5f * s, baseH + 4 * s, z + 1.2f * s), lDark);
+            b.Box(new Vector3(x - 1.2f * s, baseH + 3 * s, z - 0.5f * s), new Vector3(x + 1.2f * s, baseH + 4 * s, z + 0.5f * s), lDark);
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Estrutura: chão, teto, paredes, luzes e fachada de vidro
     // ---------------------------------------------------------------
     private static void BuildShell(SceneBuilder b)
@@ -77,13 +125,23 @@ public static class Supermarket
         // Colisor do chão (bem maior que a loja)
         b.Collider(new Vector3(-50, -1, -50), new Vector3(80, 0, 80));
 
+        // Paredes invisíveis nos limites do mundo para o jogador não cair
+        float borderH = 10f;
+        b.Collider(new Vector3(-50, 0, -50), new Vector3(80, borderH, -49)); // Fundo
+        b.Collider(new Vector3(-50, 0, 79), new Vector3(80, borderH, 80));   // Frente
+        b.Collider(new Vector3(-50, 0, -50), new Vector3(-49, borderH, 80)); // Esquerda
+        b.Collider(new Vector3(79, 0, -50), new Vector3(80, borderH, 80));   // Direita
+
         // Piso quadriculado
         for (int x = 0; x < (int)Width; x++)
             for (int z = 0; z < (int)Depth; z++)
                 b.FloorQuad(x, z, x + 1, z + 1, 0f, (x + z) % 2 == 0 ? TileA : TileB);
 
-        // Área externa (estacionamento)
-        b.FloorQuad(-30, Depth + 0.2f, Width + 30, Depth + 40, -0.01f, new Color(95, 97, 102));
+        // Área externa extensa (Grama)
+        b.FloorQuad(-50, -50, 80, 80, -0.02f, new Color(85, 170, 75));
+
+        // Área externa (estacionamento / asfalto de ponta a ponta)
+        b.FloorQuad(-50, Depth - 0.5f, 80, Depth + 40, -0.01f, new Color(95, 97, 102));
         for (int i = 0; i < 12; i++)
         {
             float x = -2 + i * 3f;
@@ -500,7 +558,7 @@ public static class Supermarket
         b.Box(new Vector3(nx - 0.25f, 0.8f, nz - 0.12f), new Vector3(nx + 0.25f, 1.35f, nz), shirtGrey); // Front main
         b.Box(new Vector3(nx - 0.25f, 1.35f, nz - 0.12f), new Vector3(nx + 0.25f, 1.5f, nz), CokeRed); // Front collar
         b.Box(new Vector3(nx - 0.25f, 0.8f, nz), new Vector3(nx + 0.25f, 1.5f, nz + 0.12f), CokeRed); // Back
-        
+
         // Chest stripes (closer together, neon)
         b.Box(new Vector3(nx - 0.26f, 1.22f, nz - 0.13f), new Vector3(nx + 0.26f, 1.25f, nz + 0.01f), stripeNeon); // Stripe 1 (Front only)
         b.Box(new Vector3(nx - 0.26f, 1.15f, nz - 0.13f), new Vector3(nx + 0.26f, 1.18f, nz + 0.01f), stripeNeon); // Stripe 2 (Front only)
