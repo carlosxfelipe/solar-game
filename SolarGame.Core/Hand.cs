@@ -13,7 +13,6 @@ namespace SolarGame;
 /// </summary>
 public class Hand
 {
-    private static readonly Color Skin = new(222, 170, 128);
     private static readonly Color SleeveColor = new(40, 90, 170);
     private static readonly Color CanTop = new(200, 202, 208);
     private const float SwingDuration = 0.3f;
@@ -28,10 +27,10 @@ public class Hand
     private readonly List<VertexPositionColor> _arm = new();
     private readonly List<VertexPositionColor> _item = new();
 
-    public Hand()
+    public Hand(Color skinColor)
     {
         // Braço (aponta para -Z = frente; a parte de trás sai da tela)
-        SceneBuilder.AddBoxGeometry(_arm, new Vector3(-0.05f, -0.05f, -0.06f), new Vector3(0.05f, 0.05f, 0.30f), Skin, SceneBuilder.Faces.All, true);
+        SceneBuilder.AddBoxGeometry(_arm, new Vector3(-0.05f, -0.05f, -0.06f), new Vector3(0.05f, 0.05f, 0.30f), skinColor, SceneBuilder.Faces.All, true);
         SceneBuilder.AddBoxGeometry(_arm, new Vector3(-0.056f, -0.056f, 0.16f), new Vector3(0.056f, 0.056f, 0.6f), SleeveColor, SceneBuilder.Faces.All, true);
     }
 

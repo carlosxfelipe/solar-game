@@ -46,8 +46,28 @@ public class Game1 : Game
     // Mensagens rápidas no HUD
     private string _message;
     private float _messageTimer;
+
+    public bool IsPaused => _paused;
+    public int ExternalMouseDeltaX { get; set; }
+    public int ExternalMouseDeltaY { get; set; }
     private string _selectedName;
     private float _selectedNameTimer;
+
+    public bool ShouldLockPointer(int x, int y)
+    {
+        if (!_paused) return true;
+        if (_skinMenuOpen)
+        {
+            var rects = GetSkinButtonRects();
+            for (int i = 0; i < rects.Length; i++)
+            {
+                if (rects[i].Contains(x, y)) return true;
+            }
+        }
+        return false;
+    }
+
+    public Action OnPlayStepSound;
 
     private KeyboardState _prevKeyboard;
     private MouseState _prevMouse;
@@ -55,6 +75,8 @@ public class Game1 : Game
 
     // Desktop: o jogo fica "pausado" enquanto o mouse não estiver capturado
     private bool _paused = true;
+    private bool _hasSelectedSkin = false;
+    private bool _skinMenuOpen = false;
 
     public Game1()
     {
@@ -63,7 +85,11 @@ public class Game1 : Game
         IsMouseVisible = true;
 
         _graphics.SynchronizeWithVerticalRetrace = true;
+#if BLAZORGL
+        _graphics.GraphicsProfile = GraphicsProfile.Reach;
+#else
         _graphics.GraphicsProfile = GraphicsProfile.HiDef;
+#endif
         _graphics.PreferredDepthStencilFormat = DepthFormat.Depth24;
         IsFixedTimeStep = false;
 
@@ -117,16 +143,27 @@ public class Game1 : Game
 
         _scene = Supermarket.Build(GraphicsDevice);
         _player = new Player(_scene.Colliders, Supermarket.SpawnPosition);
-        _hand = new Hand();
+        _hand = new Hand(new Color(222, 170, 128));
 
         _npcManager = new NpcManager(_scene.Colliders);
 
-        using (var stream = TitleContainer.OpenStream("Content/step.wav"))
+#if BLAZORGL
+        _player.OnStep += () => OnPlayStepSound?.Invoke();
+#else
+        try
         {
-            _stepSound = SoundEffect.FromStream(stream);
+            using (var stream = TitleContainer.OpenStream("Content/step.wav"))
+            {
+                _stepSound = SoundEffect.FromStream(stream);
+            }
+        }
+        catch (Exception)
+        {
+            _stepSound = null;
         }
 
-        _player.OnStep += () => _stepSound.Play(0.5f, 0f, 0f);
+        _player.OnStep += () => _stepSound?.Play(0.5f, 0f, 0f);
+#endif
     }
 
     protected override void Update(GameTime gameTime)
@@ -161,7 +198,10 @@ public class Game1 : Game
             if (!_paused)
                 SetPaused(true);
             else if (!IsMobile)
-                Exit();
+            {
+                if (_skinMenuOpen) _skinMenuOpen = false;
+                else Exit();
+            }
             else
                 SetPaused(false);
         }
@@ -170,13 +210,44 @@ public class Game1 : Game
         bool justUnpaused = false;
         if (_paused && !IsMobile && IsActive)
         {
-            bool inside = mouse.X >= 0 && mouse.Y >= 0 && mouse.X < GraphicsDevice.Viewport.Width && mouse.Y < GraphicsDevice.Viewport.Height;
-            bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released && inside;
+            bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
             bool padA = pad.Buttons.A == ButtonState.Pressed && _prevPad.Buttons.A == ButtonState.Released;
-            if (click || padA)
+
+            if (_skinMenuOpen)
             {
-                SetPaused(false);
-                justUnpaused = true; // o mesmo clique não deve pegar um item
+                if (click)
+                {
+                    var colors = GetSkinColors();
+                    var rects = GetSkinButtonRects();
+                    for (int i = 0; i < rects.Length; i++)
+                    {
+                        if (rects[i].Contains(mouse.X, mouse.Y))
+                        {
+                            _hand = new Hand(colors[i]);
+                            _hasSelectedSkin = true;
+                            _skinMenuOpen = false;
+                            SetPaused(false);
+                            justUnpaused = true;
+                            break;
+                        }
+                    }
+                }
+                else if (escPressed)
+                {
+                    _skinMenuOpen = false;
+                }
+            }
+            else if ((click && GetStartButtonRect().Contains(mouse.X, mouse.Y)) || padA)
+            {
+                if (!_hasSelectedSkin)
+                {
+                    _skinMenuOpen = true;
+                }
+                else
+                {
+                    SetPaused(false);
+                    justUnpaused = true; // o mesmo clique não deve pegar um item
+                }
             }
         }
 
@@ -187,9 +258,14 @@ public class Game1 : Game
         {
             if (!IsMobile && IsActive)
             {
+#if BLAZORGL
+                lookX = ExternalMouseDeltaX;
+                lookY = ExternalMouseDeltaY;
+#else
                 var center = GetWindowCenter();
                 lookX = mouse.X - center.X;
                 lookY = mouse.Y - center.Y;
+#endif
                 CenterMouse();
             }
 
@@ -364,6 +440,56 @@ public class Game1 : Game
         base.Draw(gameTime);
     }
 
+    private Rectangle GetStartButtonRect()
+    {
+        int w = GraphicsDevice.Viewport.Width;
+        int h = GraphicsDevice.Viewport.Height;
+        int titleScale = Math.Max(2, h / 80);
+        int textScale = Math.Max(1, titleScale / 2);
+
+        string subtitle = _hasSelectedSkin ? "RESUME GAME" : "START GAME";
+        int subtitleWidth = subtitle.Length * 4 * textScale;
+        int subtitleHeight = 5 * textScale;
+
+        int buttonWidth = subtitleWidth + 12 * textScale;
+        int buttonHeight = subtitleHeight + 12 * textScale;
+
+        int cy = h / 2;
+        int y = cy - titleScale * 2 - buttonHeight / 2;
+
+        return new Rectangle(w / 2 - buttonWidth / 2, y, buttonWidth, buttonHeight);
+    }
+
+    private Color[] GetSkinColors() => new[]
+    {
+        new Color(255, 219, 172), // Tone 1
+        new Color(222, 170, 128), // Tone 2 (Original)
+        new Color(141, 85, 36),   // Tone 3
+        new Color(77, 48, 22)     // Tone 4
+    };
+
+    private Rectangle[] GetSkinButtonRects()
+    {
+        int w = GraphicsDevice.Viewport.Width;
+        int h = GraphicsDevice.Viewport.Height;
+        int titleScale = Math.Max(2, h / 80);
+        int buttonSize = titleScale * 8;
+        int spacing = titleScale * 2;
+        int cy = h / 2;
+
+        var colors = GetSkinColors();
+        var rects = new Rectangle[colors.Length];
+
+        int totalWidth = colors.Length * buttonSize + (colors.Length - 1) * spacing;
+        int startX = w / 2 - totalWidth / 2;
+
+        for (int i = 0; i < colors.Length; i++)
+        {
+            rects[i] = new Rectangle(startX + i * (buttonSize + spacing), cy - buttonSize / 2, buttonSize, buttonSize);
+        }
+        return rects;
+    }
+
     private void DrawHud()
     {
         int w = GraphicsDevice.Viewport.Width;
@@ -379,18 +505,50 @@ public class Game1 : Game
 
             int titleScale = Math.Max(2, h / 80);
             int textScale = Math.Max(1, titleScale / 2);
-            DrawCentered("SUPERMARKET SIMULATOR", cy - titleScale * 12, titleScale, new Color(230, 40, 60));
-            DrawCentered(
-                IsMobile ? "TAP MENU TO CONTINUE" : "CLICK TO PLAY",
-                cy + titleScale * 2,
-                textScale,
-                Color.White
-            );
-            if (!IsMobile)
+
+            if (_skinMenuOpen)
             {
-                DrawCentered("WASD: MOVE   MOUSE: LOOK   SHIFT: RUN   SPACE: JUMP", cy + titleScale * 6, Math.Max(1, textScale / 2 + 1), Color.LightGray);
-                DrawCentered("LEFT CLICK: GRAB   RIGHT CLICK: PUT BACK   1-9 / WHEEL: SELECT ITEM", cy + titleScale * 8, Math.Max(1, textScale / 2 + 1), Color.LightGray);
-                DrawCentered("ESC: PAUSE / QUIT", cy + titleScale * 10, Math.Max(1, textScale / 2 + 1), Color.Gray);
+                DrawCentered("CHOOSE YOUR SKIN COLOR", cy - titleScale * 8, textScale, Color.White);
+
+                var colors = GetSkinColors();
+                var rects = GetSkinButtonRects();
+                for (int i = 0; i < colors.Length; i++)
+                {
+                    _spriteBatch.Draw(_pixel, rects[i], colors[i]);
+                    DrawRectOutline(new Rectangle(rects[i].X - 2, rects[i].Y - 2, rects[i].Width + 4, rects[i].Height + 4), 2, Color.White);
+                }
+            }
+            else
+            {
+                DrawCentered("SUPERMARKET SIMULATOR", cy - titleScale * 16, titleScale, new Color(230, 40, 60));
+
+                var startRect = GetStartButtonRect();
+                _spriteBatch.Draw(_pixel, startRect, new Color(230, 40, 60));
+
+                string subtitle = _hasSelectedSkin ? "RESUME GAME" : "START GAME";
+                int subtitleScale = textScale;
+                int subtitleWidth = subtitle.Length * 4 * subtitleScale;
+                _text.DrawString(
+                    _spriteBatch,
+                    subtitle,
+                    startRect.X + (startRect.Width - subtitleWidth) / 2,
+                    startRect.Y + (startRect.Height - 5 * subtitleScale) / 2,
+                    subtitleScale,
+                    Color.White
+                );
+
+                string credits = "Credits: Carlos Felipe Araujo";
+                int creditsScale = Math.Max(1, textScale / 2 + 1);
+                DrawCentered(credits, h - titleScale * 12, creditsScale, Color.Gray);
+
+                if (!IsMobile)
+                {
+                    int controlsY = cy + titleScale * 6;
+                    int spacing = titleScale * 3;
+                    DrawCentered("WASD: MOVE   MOUSE: LOOK   SHIFT: RUN   SPACE: JUMP", controlsY, Math.Max(1, textScale / 2 + 1), Color.LightGray);
+                    DrawCentered("LEFT CLICK: GRAB   RIGHT CLICK: PUT BACK   1-9 / WHEEL: SELECT ITEM", controlsY + spacing, Math.Max(1, textScale / 2 + 1), Color.LightGray);
+                    DrawCentered("ESC: PAUSE / QUIT", controlsY + spacing * 2, Math.Max(1, textScale / 2 + 1), Color.Gray);
+                }
             }
         }
         else
@@ -499,7 +657,13 @@ public class Game1 : Game
     private void CenterMouse()
     {
         var center = GetWindowCenter();
-        Mouse.SetPosition(center.X, center.Y);
+        try
+        {
+            Mouse.SetPosition(center.X, center.Y);
+        }
+        catch (Exception)
+        {
+        }
     }
 
     private void OnWindowClientSizeChanged(object sender, EventArgs e)

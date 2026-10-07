@@ -14,7 +14,7 @@ Para rodar e modificar este projeto, você precisa ter instalado na sua máquina
 
 ## 🚀 Primeira Vez na Máquina? (Setup Inicial)
 
-**Sim, se você está em um computador novo (ou recém-formatado)**, você precisa instalar os *workloads* do .NET para que ele consiga compilar para Android e iOS. 
+**Sim, se você está em um computador novo (ou recém-formatado)**, você precisa instalar os _workloads_ do .NET para que ele consiga compilar para Android e iOS.
 
 Abra o terminal e rode:
 
@@ -24,6 +24,9 @@ dotnet workload install android
 
 # Instala o suporte para compilar para iOS (apenas no macOS)
 dotnet workload install ios
+
+# Instala o suporte para compilar para Navegador (WebAssembly)
+dotnet workload install wasm-tools
 ```
 
 > **Nota:** Esses comandos instalam as ferramentas globalmente no seu usuário (normalmente em `~/.dotnet/`). Você **não precisa rodá-los toda vez que clonar o projeto**, apenas uma vez por máquina.
@@ -52,21 +55,41 @@ dotnet restore
 O Supermarket Simulator possui alvos diferentes para cada plataforma. Escolha abaixo a plataforma que deseja testar:
 
 ### Computador (Desktop)
+
 A forma mais fácil e rápida de testar o jogo durante o desenvolvimento:
+
 ```bash
 dotnet run --project SolarGame.Desktop
 ```
 
 ### Android
+
 Certifique-se de que há um emulador Android rodando ou um dispositivo físico conectado em modo de depuração USB:
+
 ```bash
 dotnet build SolarGame.Android -t:Run
 ```
 
 ### iOS
+
 Certifique-se de ter um simulador ou dispositivo Apple devidamente configurado via Xcode:
+
 ```bash
 dotnet build SolarGame.iOS -t:Run
+```
+
+### Navegador Web (Browser / WebAssembly)
+
+Você também pode compilar e jogar direto pelo navegador usando a tecnologia WebAssembly:
+
+```bash
+dotnet run --project SolarGame.Browser
+```
+
+Para gerar os arquivos finais prontos para produção (Release), rode:
+
+```bash
+dotnet publish SolarGame.Browser -c Release
 ```
 
 ---

@@ -228,10 +228,10 @@ public static class Supermarket
             float x1 = x0 + fw;
 
             // Corpo
-            b.Decor(new Vector3(x0, 0, 0), new Vector3(x1, top, z0 + 0.05f), new Color(35, 35, 40)); // fundo
-            b.Decor(new Vector3(x0, 0, 0), new Vector3(x0 + 0.05f, top, z1), DarkMetal); // lateral esq.
-            b.Decor(new Vector3(x1 - 0.05f, 0, 0), new Vector3(x1, top, z1), DarkMetal); // lateral dir.
-            b.Decor(new Vector3(x0, 0, 0), new Vector3(x1, shelfY[0] - 0.02f, z1), DarkMetal); // base
+            b.Decor(new Vector3(x0 + 0.05f, 0, 0.01f), new Vector3(x1 - 0.05f, top, z0 + 0.05f), new Color(35, 35, 40)); // fundo
+            b.Decor(new Vector3(x0, 0, 0.01f), new Vector3(x0 + 0.05f, top, z1), DarkMetal); // lateral esq.
+            b.Decor(new Vector3(x1 - 0.05f, 0, 0.01f), new Vector3(x1, top, z1), DarkMetal); // lateral dir.
+            b.Decor(new Vector3(x0 + 0.05f, 0, z0 + 0.05f), new Vector3(x1 - 0.05f, shelfY[0] - 0.02f, z1), DarkMetal); // base
 
             // Letreiro vermelho com "onda" branca
             b.Emissive(new Vector3(x0, top, 0), new Vector3(x1, top + 0.35f, z1), CokeRed);
@@ -276,13 +276,13 @@ public static class Supermarket
         const float w = 0.09f;
         const float d = 0.09f;
         const float gap = 0.012f;
-        const float slotHeight = 0.34f; // cabe uma garrafa com tampa
 
         // Fileira de itens individuais (o da frente primeiro); cada um pode ser pego e devolvido
         for (float zf = zFront; zf - d >= zBack - 0.001f; zf -= d + gap)
         {
             float z = zf;
-            var slot = new BoundingBox(new Vector3(x, y, z - d), new Vector3(x + w, y + slotHeight, z + 0.002f));
+            // Reduzimos a altura do SlotBounds para 0.05f para não bloquear a mira dos espaços de trás
+            var slot = new BoundingBox(new Vector3(x, y, z - d), new Vector3(x + w, y + 0.05f, z + 0.002f));
             b.Pickup(p, prod => BeverageParts(prod, x, y, z), slot);
         }
     }

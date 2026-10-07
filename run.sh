@@ -16,9 +16,13 @@ case $PLATFORM in
         echo "Building and starting iOS version..."
         dotnet build SolarGame.iOS -t:Run
         ;;
+    browser)
+        echo "Starting Browser version..."
+        dotnet run --project SolarGame.Browser
+        ;;
     *)
         echo "Invalid platform: $PLATFORM"
-        echo "Usage: ./run.sh [desktop|android|ios]"
+        echo "Usage: ./run.sh [desktop|android|ios|browser]"
         exit 1
         ;;
 esac

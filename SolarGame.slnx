@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="SolarGame.Android/SolarGame.Android.csproj" />
+  <Project Path="SolarGame.Browser/SolarGame.Browser.csproj" />
   <Project Path="SolarGame.Desktop/SolarGame.Desktop.csproj" />
   <Project Path="SolarGame.iOS/SolarGame.iOS.csproj" />
 </Solution>
