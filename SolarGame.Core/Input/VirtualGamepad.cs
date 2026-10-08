@@ -87,6 +87,24 @@ public class VirtualGamepad
             btnSize
         );
 
+        bool leftStickFound = false;
+        bool lookFound = false;
+        foreach (var touch in Touches)
+        {
+            if (_leftStickTouchId == touch.Id) leftStickFound = true;
+            if (_lookTouchId == touch.Id) lookFound = true;
+        }
+
+        if (!leftStickFound)
+        {
+            _leftStickTouchId = null;
+            _leftStickOrigin = null;
+        }
+        if (!lookFound)
+        {
+            _lookTouchId = null;
+        }
+
         bool leftStickActive = false;
 
         foreach (var touch in Touches)
@@ -94,7 +112,10 @@ public class VirtualGamepad
             if (touch.State == TouchLocationState.Released)
             {
                 if (_leftStickTouchId == touch.Id)
+                {
                     _leftStickTouchId = null;
+                    _leftStickOrigin = null;
+                }
                 if (_lookTouchId == touch.Id)
                     _lookTouchId = null;
                 continue;
@@ -110,44 +131,55 @@ public class VirtualGamepad
                 }
             }
 
+            // Continuar o movimento do direcional se já foi iniciado
+            if (_leftStickTouchId == touch.Id)
+            {
+                leftStickActive = true;
+                _leftStickCurrent = touch.Position;
+                Vector2 delta = _leftStickCurrent - _leftStickOrigin.Value;
+                float maxDist = btnSize * 1.5f;
+                if (delta.Length() > maxDist)
+                {
+                    delta.Normalize();
+                    delta *= maxDist;
+                }
+                leftThumbX = delta.X / maxDist;
+                leftThumbY = -delta.Y / maxDist;
+                continue;
+            }
+
+            // Continuar o movimento de olhar se já foi iniciado
+            if (_lookTouchId == touch.Id)
+            {
+                if (touch.State == TouchLocationState.Moved)
+                {
+                    Vector2 delta = touch.Position - _lastLookPosition;
+                    LookDelta = new Point((int)delta.X, (int)delta.Y);
+                    _lastLookPosition = touch.Position;
+                }
+                continue;
+            }
+
+            // Se for um botão, não inicia novo direcional ou câmera
             if (hitButton)
                 continue;
 
+            // Iniciar novos toques (se ainda não temos um stick/look ativo)
             if (touch.Position.X < width / 2)
             {
-                if (_leftStickTouchId == null && touch.State == TouchLocationState.Pressed)
+                if (_leftStickTouchId == null && (touch.State == TouchLocationState.Pressed || touch.State == TouchLocationState.Moved))
                 {
                     _leftStickTouchId = touch.Id;
                     _leftStickOrigin = touch.Position;
-                }
-
-                if (_leftStickTouchId == touch.Id && _leftStickOrigin.HasValue)
-                {
                     leftStickActive = true;
                     _leftStickCurrent = touch.Position;
-                    Vector2 delta = _leftStickCurrent - _leftStickOrigin.Value;
-                    float maxDist = btnSize * 1.5f;
-                    if (delta.Length() > maxDist)
-                    {
-                        delta.Normalize();
-                        delta *= maxDist;
-                    }
-                    leftThumbX = delta.X / maxDist;
-                    leftThumbY = -delta.Y / maxDist;
                 }
             }
             else
             {
-                if (_lookTouchId == null && touch.State == TouchLocationState.Pressed)
+                if (_lookTouchId == null && (touch.State == TouchLocationState.Pressed || touch.State == TouchLocationState.Moved))
                 {
                     _lookTouchId = touch.Id;
-                    _lastLookPosition = touch.Position;
-                }
-
-                if (_lookTouchId == touch.Id && touch.State == TouchLocationState.Moved)
-                {
-                    Vector2 delta = touch.Position - _lastLookPosition;
-                    LookDelta = new Point((int)delta.X, (int)delta.Y);
                     _lastLookPosition = touch.Position;
                 }
             }

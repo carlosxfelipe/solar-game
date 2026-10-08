@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
 using SolarGame.Input;
 using SolarGame.UI;
 using SolarGame.World;
@@ -18,9 +19,9 @@ namespace SolarGame;
 public class Game1 : Game
 {
 #if ANDROID || IOS
-    private static readonly bool IsMobile = true;
+    private bool IsMobile = true;
 #else
-    private static readonly bool IsMobile = false;
+    private bool IsMobile = false;
 #endif
 
     private readonly GraphicsDeviceManager _graphics;
@@ -172,6 +173,12 @@ public class Game1 : Game
         var keyboard = Keyboard.GetState();
         var mouse = Mouse.GetState();
         var pad = GamePad.GetState(PlayerIndex.One);
+        var touches = TouchPanel.GetState();
+
+        if (!IsMobile && touches.Count > 0)
+        {
+            IsMobile = true;
+        }
 
         int lookX = 0,
             lookY = 0;
@@ -197,20 +204,39 @@ public class Game1 : Game
         {
             if (!_paused)
                 SetPaused(true);
+            else if (_skinMenuOpen)
+                _skinMenuOpen = false;
             else if (!IsMobile)
-            {
-                if (_skinMenuOpen) _skinMenuOpen = false;
-                else Exit();
-            }
-            else
+                Exit();
+            else if (_hasSelectedSkin)
                 SetPaused(false);
         }
 
-        // Desktop: clique (ou Enter/A) para começar/voltar a jogar
+        // Clique (ou Enter/A/Touch) para começar/voltar a jogar
         bool justUnpaused = false;
-        if (_paused && !IsMobile && IsActive)
+        if (_paused)
         {
-            bool click = mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released;
+            bool click = false;
+            int cx = 0, cy = 0;
+
+            if (IsActive && mouse.LeftButton == ButtonState.Pressed && _prevMouse.LeftButton == ButtonState.Released)
+            {
+                click = true;
+                cx = mouse.X;
+                cy = mouse.Y;
+            }
+
+            foreach (var t in touches)
+            {
+                if (t.State == TouchLocationState.Pressed)
+                {
+                    click = true;
+                    cx = (int)t.Position.X;
+                    cy = (int)t.Position.Y;
+                    break;
+                }
+            }
+
             bool padA = pad.Buttons.A == ButtonState.Pressed && _prevPad.Buttons.A == ButtonState.Released;
 
             if (_skinMenuOpen)
@@ -221,7 +247,7 @@ public class Game1 : Game
                     var rects = GetSkinButtonRects();
                     for (int i = 0; i < rects.Length; i++)
                     {
-                        if (rects[i].Contains(mouse.X, mouse.Y))
+                        if (rects[i].Contains(cx, cy))
                         {
                             _hand = new Hand(colors[i]);
                             _hasSelectedSkin = true;
@@ -232,12 +258,8 @@ public class Game1 : Game
                         }
                     }
                 }
-                else if (escPressed)
-                {
-                    _skinMenuOpen = false;
-                }
             }
-            else if ((click && GetStartButtonRect().Contains(mouse.X, mouse.Y)) || padA)
+            else if ((click && GetStartButtonRect().Contains(cx, cy)) || padA)
             {
                 if (!_hasSelectedSkin)
                 {
