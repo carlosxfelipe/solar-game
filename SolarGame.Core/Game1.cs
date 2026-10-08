@@ -100,7 +100,6 @@ public class Game1 : Game
         _graphics.PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
         _graphics.SupportedOrientations =
             DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
-        _paused = false;
 #else
         _graphics.PreferredBackBufferWidth = 1280;
         _graphics.PreferredBackBufferHeight = 720;
